@@ -94,25 +94,7 @@ type Card struct {
 }
 
 func (c Card) String() string {
-	return fmt.Sprintf("%s%s", c.Rank.Rune(), c.Suit.Rune())
-}
-
-func String(set []Card) string {
-	cards := make([]string, 0, len(set))
-	for _, c := range set {
-		cards = append(cards, c.String())
-	}
-	return `{ ` + strings.Join(cards, ` `) + ` }`
-}
-
-func Shuffle(set []Card) {
-	r := rand.New(rand.NewSource(time.Now().UnixNano()))
-	for src := 0; src < len(set); src++ {
-		dest := r.Intn(len(set))
-		swap := set[src]
-		set[src] = set[dest]
-		set[dest] = swap
-	}
+	return fmt.Sprintf("%c%c", c.Rank.Rune(), c.Suit.Rune())
 }
 
 func NewDeck() []Card {
@@ -127,12 +109,57 @@ func NewDeck() []Card {
 	return deck
 }
 
-func NewDeckSet(decks uint8) []Card {
+func NewDeckSet(decks uint) []Card {
 	deckSet := make([]Card, 52*decks)
-	for d := uint8(0); d < decks; d++ {
+	for d := uint(0); d < decks; d++ {
 		a := d * 52
 		b := a + 52
 		copy(deckSet[a:b], NewDeck())
 	}
 	return deckSet
+}
+
+func String(slice []Card) string {
+	cards := make([]string, 0, len(slice))
+	for _, c := range slice {
+		cards = append(cards, c.String())
+	}
+	return `{ ` + strings.Join(cards, ` `) + ` }`
+}
+
+func Shuffle(slice []Card) {
+	r := rand.New(rand.NewSource(time.Now().UnixNano()))
+	for src := 0; src < len(slice); src++ {
+		dest := r.Intn(len(slice))
+		swap := slice[src]
+		slice[src] = slice[dest]
+		slice[dest] = swap
+	}
+}
+
+func Combinations(slice []Card, choose int) chan []Card {
+	if choose > len(slice) {
+		panic("fifty2: cannot produce combinations larger than given card slice")
+	}
+
+	ch := make(chan []Card)
+	go func() {
+		findCombinations(slice, []Card{}, choose, ch)
+		close(ch)
+	}()
+
+	return ch
+}
+
+func findCombinations(slice []Card, combo []Card, choose int, ch chan []Card) {
+	for i, c := range slice {
+		nextCombo := make([]Card, len(combo) + 1)
+		copy(nextCombo, combo)
+		nextCombo[len(combo)] = c
+		if choose == 1 {
+			ch <- nextCombo
+		} else {
+			findCombinations(slice[i+1:], nextCombo, choose-1, ch)
+		}
+	}
 }
