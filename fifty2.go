@@ -10,82 +10,137 @@ import (
 type Suit uint8
 
 const (
-	SuitClubs Suit = 1 << iota
-	SuitDiamonds
-	SuitHearts
-	SuitSpades
+	Clubs Suit = iota
+	Diamonds
+	Hearts
+	Spades
 )
 
 func (s Suit) Rune() rune {
 	switch s {
-	case SuitClubs:
+	case Clubs:
 		return '♣'
-	case SuitDiamonds:
+	case Diamonds:
 		return '♦'
-	case SuitHearts:
+	case Hearts:
 		return '♥'
-	case SuitSpades:
+	case Spades:
 		return '♠'
 	}
 	return 0
 }
 
-func Suits() []Suit {
-	return []Suit{SuitClubs, SuitDiamonds, SuitHearts, SuitSpades}
+func (s Suit) Mask() uint8 {
+	return uint8(1) << s
 }
 
-type Rank uint16
+func Suits() []Suit {
+	return []Suit{Clubs, Diamonds, Hearts, Spades}
+}
+
+func SuitSet(bitSet uint8) []Suit {
+	suitSet := make([]Suit, 0, 4)
+	for _, suit := range Suits() {
+		if (bitSet & suit.Mask()) != 0 {
+			suitSet = append(suitSet, suit)
+		}
+	}
+	return suitSet
+}
+
+type Rank uint8
 
 const (
-	RankAce Rank = 1 << iota
-	Rank2
-	Rank3
-	Rank4
-	Rank5
-	Rank6
-	Rank7
-	Rank8
-	Rank9
-	Rank10
-	RankJack
-	RankQueen
-	RankKing
+	Ace Rank = iota
+	Two
+	Three
+	Four
+	Five
+	Six
+	Seven
+	Eight
+	Nine
+	Ten
+	Jack
+	Queen
+	King
 )
 
-func Ranks() []Rank {
-	return []Rank{RankAce, Rank2, Rank3, Rank4, Rank5, Rank6, Rank7, Rank8, Rank9, Rank10, RankJack, RankQueen, RankKing}
+func (r Rank) Mask() uint16 {
+	return uint16(1) << r
 }
 
 func (r Rank) Rune() rune {
 	switch r {
-	case RankAce:
+	case Ace:
 		return 'A'
-	case Rank2:
+	case Two:
 		return '2'
-	case Rank3:
+	case Three:
 		return '3'
-	case Rank4:
+	case Four:
 		return '4'
-	case Rank5:
+	case Five:
 		return '5'
-	case Rank6:
+	case Six:
 		return '6'
-	case Rank7:
+	case Seven:
 		return '7'
-	case Rank8:
+	case Eight:
 		return '8'
-	case Rank9:
+	case Nine:
 		return '9'
-	case Rank10:
+	case Ten:
 		return 'T'
-	case RankJack:
+	case Jack:
 		return 'J'
-	case RankQueen:
+	case Queen:
 		return 'Q'
-	case RankKing:
+	case King:
 		return 'K'
 	}
 	return 0
+}
+
+func Ranks() []Rank {
+	return []Rank{Ace, Two, Three, Four, Five, Six, Seven, Eight, Nine, Ten, Jack, Queen, King}
+}
+
+func RankSet(bitSet uint16) []Rank {
+	rankSet := make([]Rank, 0, 13)
+	for _, rank := range Ranks() {
+		if (bitSet & rank.Mask()) != 0 {
+			rankSet = append(rankSet, rank)
+		}
+	}
+	return rankSet
+}
+
+func MaxRank(ranks []Rank) Rank {
+	if len(ranks) == 0 {
+		panic("fifty2: cannot find max rank from empty slice")
+	}
+	max := ranks[0]
+	for i := 1; i < len(ranks); i++ {
+		if ranks[i] > max {
+			max = ranks[i]
+		}
+	}
+	return max
+}
+
+type RankSlice []Rank
+
+func (rs RankSlice) Len() int {
+	return len(rs)
+}
+
+func (rs RankSlice) Less(i, j int) bool {
+	return rs[i] < rs[j]
+}
+
+func (rs RankSlice) Swap(i, j int) {
+	rs[i], rs[j] = rs[j], rs[i]
 }
 
 type Card struct {

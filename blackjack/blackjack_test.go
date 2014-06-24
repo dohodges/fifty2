@@ -8,56 +8,56 @@ import (
 func TestHandValues(t *testing.T) {
 
 	assertHandValue(t, 4, []Card{
-		Card{Rank2, SuitClubs},
-		Card{Rank2, SuitDiamonds},
+		Card{Two, Clubs},
+		Card{Two, Diamonds},
 	})
 
 	assertHandValue(t, 12, []Card{
-		Card{RankAce, SuitSpades},
-		Card{RankAce, SuitHearts},
+		Card{Ace, Spades},
+		Card{Ace, Hearts},
 	})
 
 	assertHandValue(t, 13, []Card{
-		Card{RankAce, SuitSpades},
-		Card{RankAce, SuitHearts},
-		Card{RankAce, SuitClubs},
+		Card{Ace, Spades},
+		Card{Ace, Hearts},
+		Card{Ace, Clubs},
 	})
 
 	assertHandValue(t, 14, []Card{
-		Card{RankAce, SuitSpades},
-		Card{RankAce, SuitHearts},
-		Card{RankAce, SuitClubs},
-		Card{RankAce, SuitDiamonds},
+		Card{Ace, Spades},
+		Card{Ace, Hearts},
+		Card{Ace, Clubs},
+		Card{Ace, Diamonds},
 	})
 
 	assertHandValue(t, 20, []Card{
-		Card{RankQueen, SuitSpades},
-		Card{Rank10, SuitClubs},
+		Card{Queen, Spades},
+		Card{Ten, Clubs},
 	})
 
 	assertHandValue(t, 21, []Card{
-		Card{RankJack, SuitSpades},
-		Card{RankAce, SuitHearts},
+		Card{Jack, Spades},
+		Card{Ace, Hearts},
 	})
 
 	assertHandValue(t, 21, []Card{
-		Card{RankQueen, SuitHearts},
-		Card{RankJack, SuitSpades},
-		Card{RankAce, SuitHearts},
+		Card{Queen, Hearts},
+		Card{Jack, Spades},
+		Card{Ace, Hearts},
 	})
 
 	assertHandValue(t, 21, []Card{
-		Card{Rank2, SuitHearts},
-		Card{Rank4, SuitSpades},
-		Card{Rank9, SuitHearts},
-		Card{Rank3, SuitHearts},
-		Card{Rank3, SuitDiamonds},
+		Card{Two, Hearts},
+		Card{Four, Spades},
+		Card{Nine, Hearts},
+		Card{Three, Hearts},
+		Card{Three, Diamonds},
 	})
 
 	assertHandValue(t, 29, []Card{
-		Card{RankQueen, SuitHearts},
-		Card{RankJack, SuitSpades},
-		Card{Rank9, SuitHearts},
+		Card{Queen, Hearts},
+		Card{Jack, Spades},
+		Card{Nine, Hearts},
 	})
 
 }

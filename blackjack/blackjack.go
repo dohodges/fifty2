@@ -6,25 +6,25 @@ import (
 
 func CardValue(c Card) uint {
 	switch c.Rank {
-	case Rank2:
+	case Two:
 		return 2
-	case Rank3:
+	case Three:
 		return 3
-	case Rank4:
+	case Four:
 		return 4
-	case Rank5:
+	case Five:
 		return 5
-	case Rank6:
+	case Six:
 		return 6
-	case Rank7:
+	case Seven:
 		return 7
-	case Rank8:
+	case Eight:
 		return 8
-	case Rank9:
+	case Nine:
 		return 9
-	case Rank10, RankJack, RankQueen, RankKing:
+	case Ten, Jack, Queen, King:
 		return 10
-	case RankAce:
+	case Ace:
 		return 11
 	}
 	return 0
@@ -35,7 +35,7 @@ func HandValue(hand []Card) uint {
 	value := uint(0)
 	for _, c := range hand {
 		value += CardValue(c)
-		if c.Rank == RankAce {
+		if c.Rank == Ace {
 			aces++
 		}
 	}
