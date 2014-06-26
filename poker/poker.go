@@ -2,7 +2,6 @@ package poker
 
 import (
 	. "github.com/dohodges/fifty2"
-	"sort"
 )
 
 type HandRank uint16
@@ -19,15 +18,33 @@ const (
 	StraightFlush
 )
 
+type CardStrength Rank
+
 const (
-	AceLow Rank = Ace
-	AceHigh Rank = King + 1
+	AceLow  CardStrength = CardStrength(Ace)
+	AceHigh CardStrength = CardStrength(King + 1)
 )
 
+func (cs CardStrength) Rank() Rank {
+	return Rank(cs % 13)
+}
+
+func MaxCardStrength(strengths []CardStrength) CardStrength {
+	if len(strengths) == 0 {
+		panic("fifty2: cannot find max strength from an empty slice")
+	}
+	max := strengths[0]
+	for i := 1; i < len(strengths); i++ {
+		if strengths[i] > max {
+			max = strengths[i]
+		}
+	}
+	return max
+}
 
 type HandStrength struct {
-	HandRank HandRank
-	Strength RankSlice
+	Rank     HandRank
+	Strength []CardStrength
 }
 
 func GetHandStrength(hand []Card) HandStrength {
@@ -47,30 +64,31 @@ func GetHandStrength(hand []Card) HandStrength {
 	}
 
 	// straight flush
-	straightRanks := make([]Rank, 0, 4)
+	straights := make([]CardStrength, 0, 4)
 	for _, bitSet := range suitBitSet {
-		if rank, found := findStraight(bitSet); found {
-			straightRanks = append(straightRanks, rank)
+		if strength, found := findStraight(bitSet); found {
+			straights = append(straights, strength)
 		}
 	}
-	if len(straightRanks) > 0 {
-		return HandStrength{StraightFlush, []Rank{MaxRank(straightRanks)}}
+	if len(straights) > 0 {
+		strength := MaxCardStrength(straights)
+		return HandStrength{StraightFlush, []CardStrength{strength}}
 	}
 
 	// quads
-	for rank := AceHigh; rank >= Two; rank-- {
-		if rankCount[rank % 13] >= 4 {
-			kickers := maxRankSet(bitSet &^ rank.Mask(), 1)
-			return HandStrength{Quads, append([]Rank{rank}, kickers...)}
+	for strength := AceHigh; strength > AceLow; strength-- {
+		if rankCount[strength.Rank()] >= 4 {
+			kickers := getKickers(bitSet &^ strength.Rank().Mask(), 1)
+			return HandStrength{Quads, append([]CardStrength{strength}, kickers...)}
 		}
 	}
 
 	// full house
-	for hiRank := AceHigh; hiRank >= Two; hiRank-- {
-		if rankCount[hiRank % 13] >= 3 {
-			for loRank := AceHigh; loRank >= Two; loRank-- {
-				if loRank != hiRank && rankCount[loRank % 13] >= 2 {
-					return HandStrength{FullHouse, []Rank{hiRank, loRank}}
+	for hiStrength := AceHigh; hiStrength > AceLow; hiStrength-- {
+		if rankCount[hiStrength.Rank()] >= 3 {
+			for loStrength := AceHigh; loStrength > AceLow; loStrength-- {
+				if loStrength != hiStrength && rankCount[loStrength.Rank()] >= 2 {
+					return HandStrength{FullHouse, []CardStrength{hiStrength, loStrength}}
 				}
 			}
 		}
@@ -84,41 +102,41 @@ func GetHandStrength(hand []Card) HandStrength {
 		}
 	}
 	if flushBitSet > 0 {
-		return HandStrength{Flush, maxRankSet(flushBitSet, 5)}
+		return HandStrength{Flush, getKickers(flushBitSet, 5)}
 	}
 
 	// straight
-	if rank, found := findStraight(bitSet); found {
-		return HandStrength{Straight, []Rank{rank}}
+	if strength, found := findStraight(bitSet); found {
+		return HandStrength{Straight, []CardStrength{strength}}
 	}
 
 	// trips
-	for rank := AceHigh; rank >= Two; rank-- {
-		if rankCount[rank % 13] >= 3 {
-			kickers := maxRankSet(bitSet &^ rank.Mask(), 2)
-			return HandStrength{Trips, append([]Rank{rank}, kickers...)}
+	for strength := AceHigh; strength > AceLow; strength-- {
+		if rankCount[strength.Rank()] >= 3 {
+			kickers := getKickers(bitSet &^ strength.Rank().Mask(), 2)
+			return HandStrength{Trips, append([]CardStrength{strength}, kickers...)}
 		}
 	}
 
 	// two pair / pair
-	for hiRank := AceHigh; hiRank >= Two; hiRank-- {
-		if rankCount[hiRank % 13] >= 2 {
-			for loRank := AceHigh; loRank >= Two; loRank-- {
-				if loRank != hiRank && rankCount[loRank % 13] >= 2 {
-					kickers := maxRankSet(bitSet &^ (hiRank.Mask() | loRank.Mask()), 1)
-					return HandStrength{TwoPair, append([]Rank{hiRank, loRank}, kickers...)}
+	for hiStrength := AceHigh; hiStrength > AceLow; hiStrength-- {
+		if rankCount[hiStrength.Rank()] >= 2 {
+			for loStrength := AceHigh; loStrength > AceLow; loStrength-- {
+				if loStrength != hiStrength && rankCount[loStrength.Rank()] >= 2 {
+					kickers := getKickers(bitSet &^ (hiStrength.Rank().Mask() | loStrength.Rank().Mask()), 1)
+					return HandStrength{TwoPair, append([]CardStrength{hiStrength, loStrength}, kickers...)}
 				}
 			}
-			kickers := maxRankSet(bitSet &^ hiRank.Mask(), 3)
-			return HandStrength{Pair, append([]Rank{hiRank}, kickers...)}
+			kickers := getKickers(bitSet &^ hiStrength.Rank().Mask(), 3)
+			return HandStrength{Pair, append([]CardStrength{hiStrength}, kickers...)}
 		}
 	}
 
 	// high card
-	return HandStrength{HighCard, maxRankSet(bitSet, 5)}
+	return HandStrength{HighCard, getKickers(bitSet, 5)}
 }
 
-func findStraight(bitSet uint16) (Rank, bool) {
+func findStraight(bitSet uint16) (CardStrength, bool) {
 	// ace high straight - 0001 1110 0000 0001
 	mask := uint16(0x1E01)
 	if (bitSet & mask) == mask {
@@ -128,15 +146,22 @@ func findStraight(bitSet uint16) (Rank, bool) {
 	for r := King; r >= Five; r-- {
 		mask = uint16(0x001F) << (r - Five)
 		if (bitSet & mask) == mask {
-			return r, true
+			return CardStrength(r), true
 		}
 	}
 
 	return 0, false
 }
 
-func maxRankSet(bitSet uint16, length int) []Rank {
-	maxSet := RankSet(bitSet)
-	sort.Sort(sort.Reverse(RankSlice(maxSet)))
-	return maxSet[0:length]
+func getKickers(bitSet uint16, max int) []CardStrength {
+	kickers := make([]CardStrength, 0, max)
+	for strength := AceHigh; strength > AceLow; strength-- {
+		if (bitSet & strength.Rank().Mask()) != 0 {
+			kickers = append(kickers, strength)
+			if len(kickers) == max {
+				return kickers
+			}
+		}
+	}
+	return kickers
 }

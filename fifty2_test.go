@@ -7,10 +7,10 @@ import (
 
 func TestCombinations(t *testing.T) {
 	hand := []Card{
-		Card{Rank4, SuitSpades},
-		Card{Rank5, SuitHearts},
-		Card{Rank6, SuitDiamonds},
-		Card{Rank7, SuitClubs},
+		Card{Four, Spades},
+		Card{Five, Hearts},
+		Card{Six, Diamonds},
+		Card{Seven, Clubs},
 	}
 
 	combos := make([][]Card, 0, 6)
@@ -19,12 +19,12 @@ func TestCombinations(t *testing.T) {
 	}
 
 	expect := [][]Card{
-		[]Card{Card{Rank4, SuitSpades}, Card{Rank5, SuitHearts}},
-		[]Card{Card{Rank4, SuitSpades}, Card{Rank6, SuitDiamonds}},
-		[]Card{Card{Rank4, SuitSpades}, Card{Rank7, SuitClubs}},
-		[]Card{Card{Rank5, SuitHearts}, Card{Rank6, SuitDiamonds}},
-		[]Card{Card{Rank5, SuitHearts}, Card{Rank7, SuitClubs}},
-		[]Card{Card{Rank6, SuitDiamonds}, Card{Rank7, SuitClubs}},
+		[]Card{Card{Four, Spades}, Card{Five, Hearts}},
+		[]Card{Card{Four, Spades}, Card{Six, Diamonds}},
+		[]Card{Card{Four, Spades}, Card{Seven, Clubs}},
+		[]Card{Card{Five, Hearts}, Card{Six, Diamonds}},
+		[]Card{Card{Five, Hearts}, Card{Seven, Clubs}},
+		[]Card{Card{Six, Diamonds}, Card{Seven, Clubs}},
 	}
 
 	if !reflect.DeepEqual(combos, expect) {

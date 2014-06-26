@@ -38,16 +38,6 @@ func Suits() []Suit {
 	return []Suit{Clubs, Diamonds, Hearts, Spades}
 }
 
-func SuitSet(bitSet uint8) []Suit {
-	suitSet := make([]Suit, 0, 4)
-	for _, suit := range Suits() {
-		if (bitSet & suit.Mask()) != 0 {
-			suitSet = append(suitSet, suit)
-		}
-	}
-	return suitSet
-}
-
 type Rank uint8
 
 const (
@@ -104,43 +94,6 @@ func (r Rank) Rune() rune {
 
 func Ranks() []Rank {
 	return []Rank{Ace, Two, Three, Four, Five, Six, Seven, Eight, Nine, Ten, Jack, Queen, King}
-}
-
-func RankSet(bitSet uint16) []Rank {
-	rankSet := make([]Rank, 0, 13)
-	for _, rank := range Ranks() {
-		if (bitSet & rank.Mask()) != 0 {
-			rankSet = append(rankSet, rank)
-		}
-	}
-	return rankSet
-}
-
-func MaxRank(ranks []Rank) Rank {
-	if len(ranks) == 0 {
-		panic("fifty2: cannot find max rank from empty slice")
-	}
-	max := ranks[0]
-	for i := 1; i < len(ranks); i++ {
-		if ranks[i] > max {
-			max = ranks[i]
-		}
-	}
-	return max
-}
-
-type RankSlice []Rank
-
-func (rs RankSlice) Len() int {
-	return len(rs)
-}
-
-func (rs RankSlice) Less(i, j int) bool {
-	return rs[i] < rs[j]
-}
-
-func (rs RankSlice) Swap(i, j int) {
-	rs[i], rs[j] = rs[j], rs[i]
 }
 
 type Card struct {
