@@ -18,6 +18,34 @@ const (
 	StraightFlush
 )
 
+func HandRanks() []HandRank {
+	return []HandRank{StraightFlush, Quads, FullHouse, Flush, Straight, Trips, TwoPair, Pair, HighCard}
+}
+
+func (hr HandRank) String() string {
+	switch hr {
+	case StraightFlush:
+		return "Straight Flush"
+	case Quads:
+		return "Quads"
+	case FullHouse:
+		return "Full House"
+	case Flush:
+		return "Flush"
+	case Straight:
+		return "Straight"
+	case Trips:
+		return "Trips"
+	case TwoPair:
+		return "Two Pair"
+	case Pair:
+		return "Pair"
+	case HighCard:
+		return "High Card"
+	}
+	return ""
+}
+
 type CardStrength Rank
 
 const (
