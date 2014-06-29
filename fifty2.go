@@ -3,7 +3,6 @@ package fifty2
 import (
 	"fmt"
 	"math/rand"
-	"strings"
 	"time"
 )
 
@@ -127,21 +126,11 @@ func NewDeckSet(decks uint) []Card {
 	return deckSet
 }
 
-func String(slice []Card) string {
-	cards := make([]string, 0, len(slice))
-	for _, c := range slice {
-		cards = append(cards, c.String())
-	}
-	return `{ ` + strings.Join(cards, ` `) + ` }`
-}
-
 func Shuffle(slice []Card) {
 	r := rand.New(rand.NewSource(time.Now().UnixNano()))
 	for src := 0; src < len(slice); src++ {
 		dest := r.Intn(len(slice))
-		swap := slice[src]
-		slice[src] = slice[dest]
-		slice[dest] = swap
+		slice[dest], slice[src] = slice[src], slice[dest]
 	}
 }
 
@@ -152,7 +141,7 @@ func Combinations(slice []Card, choose int) chan []Card {
 
 	ch := make(chan []Card)
 	go func() {
-		findCombinations(slice, []Card{}, choose, ch)
+		findCombinations(slice, make([]Card, choose), choose, ch)
 		close(ch)
 	}()
 
@@ -161,13 +150,13 @@ func Combinations(slice []Card, choose int) chan []Card {
 
 func findCombinations(slice []Card, combo []Card, choose int, ch chan []Card) {
 	for i, c := range slice {
-		nextCombo := make([]Card, len(combo) + 1)
-		copy(nextCombo, combo)
-		nextCombo[len(combo)] = c
+		combo[len(combo)-choose] = c
 		if choose == 1 {
-			ch <- nextCombo
+			result := make([]Card, len(combo))
+			copy(result, combo)
+			ch <- result
 		} else {
-			findCombinations(slice[i+1:], nextCombo, choose-1, ch)
+			findCombinations(slice[i+1:], combo, choose-1, ch)
 		}
 	}
 }
