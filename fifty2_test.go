@@ -2,8 +2,21 @@ package fifty2
 
 import (
 	"reflect"
+	"strings"
 	"testing"
 )
+
+func TestCardReader(t *testing.T) {
+	card, _ := NewCardReader(strings.NewReader("7♠")).Read()
+	if !reflect.DeepEqual(card, Card{Seven, Spades}) {
+		t.Errorf("incorrect card read - %s", card)
+	}
+
+	hand, _ := NewCardReader(strings.NewReader("3C4D")).ReadAll()
+	if !reflect.DeepEqual(hand, []Card{Card{Three, Clubs}, Card{Four, Diamonds}}) {
+		t.Errorf("incorrect hand read - %s", hand)
+	}
+}
 
 func TestCombinations(t *testing.T) {
 	hand := []Card{

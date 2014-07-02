@@ -1,6 +1,8 @@
 package fifty2
 
 import (
+	"bufio"
+	"io"
 	"fmt"
 	"math/rand"
 	"time"
@@ -14,6 +16,20 @@ const (
 	Hearts
 	Spades
 )
+
+func ParseSuit(r rune) (Suit, error) {
+	switch r {
+	case 'c', 'C', '♣':
+		return Clubs, nil
+	case 'd', 'D', '♦':
+		return Diamonds, nil
+	case 'h', 'H', '♥':
+		return Hearts, nil
+	case 's', 'S', '♠':
+		return Spades, nil
+	}
+	return 0, fmt.Errorf("fifty2: unknown suit[%c]", r)
+}
 
 func (s Suit) Rune() rune {
 	switch s {
@@ -55,8 +71,36 @@ const (
 	King
 )
 
-func (r Rank) Mask() uint16 {
-	return uint16(1) << r
+func ParseRank(r rune) (Rank, error) {
+	switch r {
+	case 'a', 'A':
+		return Ace, nil
+	case '2':
+		return Two, nil
+	case '3':
+		return Three, nil
+	case '4':
+		return Four, nil
+	case '5':
+		return Five, nil
+	case '6':
+		return Six, nil
+	case '7':
+		return Seven, nil
+	case '8':
+		return Eight, nil
+	case '9':
+		return Nine, nil
+	case 't', 'T':
+		return Ten, nil
+	case 'j', 'J':
+		return Jack, nil
+	case 'q', 'Q':
+		return Queen, nil
+	case 'k', 'K':
+		return King, nil
+	}
+	return 0, fmt.Errorf("fifty2: unknown rank[%c]", r)
 }
 
 func (r Rank) Rune() rune {
@@ -91,6 +135,10 @@ func (r Rank) Rune() rune {
 	return 0
 }
 
+func (r Rank) Mask() uint16 {
+	return uint16(1) << r
+}
+
 func Ranks() []Rank {
 	return []Rank{Ace, Two, Three, Four, Five, Six, Seven, Eight, Nine, Ten, Jack, Queen, King}
 }
@@ -102,6 +150,52 @@ type Card struct {
 
 func (c Card) String() string {
 	return fmt.Sprintf("%c%c", c.Rank.Rune(), c.Suit.Rune())
+}
+
+type CardReader struct {
+	reader *bufio.Reader
+}
+
+func NewCardReader(reader io.Reader) *CardReader {
+	return &CardReader{bufio.NewReader(reader)}
+}
+
+func (cr *CardReader) Read() (Card, error) {
+	r, _, err := cr.reader.ReadRune()
+	if err != nil {
+		return Card{}, err
+	}
+
+	rank, err := ParseRank(r)
+	if err != nil {
+		return Card{}, err
+	}
+
+	r, _, err = cr.reader.ReadRune()
+	if err != nil {
+		return Card{}, err
+	}
+
+	suit, err := ParseSuit(r)
+	if err != nil {
+		return Card{}, err
+	}
+
+	return Card{rank, suit}, nil
+}
+
+func (cr *CardReader) ReadAll() ([]Card, error) {
+	cards := make([]Card, 0)
+	for  {
+		card, err := cr.Read()
+		if err == nil {
+			cards = append(cards, card)
+		} else if err == io.EOF {
+			return cards, nil
+		} else {
+			return cards, err
+		}
+	}
 }
 
 func NewDeck() []Card {
