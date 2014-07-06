@@ -228,6 +228,23 @@ func Shuffle(slice []Card) {
 	}
 }
 
+func Index(slice []Card, card Card) int {
+	for i, c := range slice {
+		if c == card {
+			return i
+		}
+	}
+	return -1
+}
+
+func Remove(slice []Card, card Card) []Card {
+	index := Index(slice, card)
+	if index < 0 {
+		return slice
+	}
+	return append(slice[:index], slice[index+1:]...)
+}
+
 func Combinations(slice []Card, choose int) chan []Card {
 	if choose > len(slice) {
 		panic("fifty2: cannot produce combinations larger than given card slice")
