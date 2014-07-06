@@ -2,8 +2,8 @@ package fifty2
 
 import (
 	"bufio"
-	"io"
 	"fmt"
+	"io"
 	"math/rand"
 	"time"
 )
@@ -186,7 +186,7 @@ func (cr *CardReader) Read() (Card, error) {
 
 func (cr *CardReader) ReadAll() ([]Card, error) {
 	cards := make([]Card, 0)
-	for  {
+	for {
 		card, err := cr.Read()
 		if err == nil {
 			cards = append(cards, card)

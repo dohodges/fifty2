@@ -104,7 +104,7 @@ func MaxHandStrength(strengths []HandStrength) HandStrength {
 func GetHandStrength(hand []Card) HandStrength {
 
 	var (
-		bitSet uint16
+		bitSet     uint16
 		suitBitSet [4]uint16
 		rankCount  [13]uint8
 		suitCount  [4]uint8
@@ -132,7 +132,7 @@ func GetHandStrength(hand []Card) HandStrength {
 	// quads
 	for strength := AceHigh; strength > AceLow; strength-- {
 		if rankCount[strength.Rank()] >= 4 {
-			kickers := getKickers(bitSet &^ strength.Rank().Mask(), 1)
+			kickers := getKickers(bitSet&^strength.Rank().Mask(), 1)
 			return HandStrength{Quads, append([]CardStrength{strength}, kickers...)}
 		}
 	}
@@ -151,7 +151,7 @@ func GetHandStrength(hand []Card) HandStrength {
 	// flush
 	flushBitSet := uint16(0)
 	for suit, count := range suitCount {
-		if count >= 5  && suitBitSet[suit] > flushBitSet {
+		if count >= 5 && suitBitSet[suit] > flushBitSet {
 			flushBitSet = suitBitSet[suit]
 		}
 	}
@@ -167,7 +167,7 @@ func GetHandStrength(hand []Card) HandStrength {
 	// trips
 	for strength := AceHigh; strength > AceLow; strength-- {
 		if rankCount[strength.Rank()] >= 3 {
-			kickers := getKickers(bitSet &^ strength.Rank().Mask(), 2)
+			kickers := getKickers(bitSet&^strength.Rank().Mask(), 2)
 			return HandStrength{Trips, append([]CardStrength{strength}, kickers...)}
 		}
 	}
@@ -177,11 +177,11 @@ func GetHandStrength(hand []Card) HandStrength {
 		if rankCount[hiStrength.Rank()] >= 2 {
 			for loStrength := AceHigh; loStrength > AceLow; loStrength-- {
 				if loStrength != hiStrength && rankCount[loStrength.Rank()] >= 2 {
-					kickers := getKickers(bitSet &^ (hiStrength.Rank().Mask() | loStrength.Rank().Mask()), 1)
+					kickers := getKickers(bitSet&^(hiStrength.Rank().Mask()|loStrength.Rank().Mask()), 1)
 					return HandStrength{TwoPair, append([]CardStrength{hiStrength, loStrength}, kickers...)}
 				}
 			}
-			kickers := getKickers(bitSet &^ hiStrength.Rank().Mask(), 3)
+			kickers := getKickers(bitSet&^hiStrength.Rank().Mask(), 3)
 			return HandStrength{Pair, append([]CardStrength{hiStrength}, kickers...)}
 		}
 	}

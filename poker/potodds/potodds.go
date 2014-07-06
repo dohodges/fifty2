@@ -10,12 +10,12 @@ import (
 )
 
 type Game struct {
-	Flag  string
-	Name  string
-	HiLo  bool
-	MinHandSize int
-	MaxHandSize int
-	MaxBoardSize int
+	Flag            string
+	Name            string
+	HiLo            bool
+	MinHandSize     int
+	MaxHandSize     int
+	MaxBoardSize    int
 	GetHandStrength func(board, hand []Card) HandStrength
 }
 
@@ -24,11 +24,11 @@ var games []Game
 func init() {
 
 	Holdem := Game{
-		Flag:  "holdem",
-		Name:  "Texas Hold'em",
-		HiLo:  false,
-		MinHandSize: 2,
-		MaxHandSize: 2,
+		Flag:         "holdem",
+		Name:         "Texas Hold'em",
+		HiLo:         false,
+		MinHandSize:  2,
+		MaxHandSize:  2,
 		MaxBoardSize: 5,
 		GetHandStrength: func(board, pocket []Card) HandStrength {
 			hand := make([]Card, 7)
@@ -39,11 +39,11 @@ func init() {
 	}
 
 	Omaha := Game{
-		Flag: "omaha",
-		Name: "Omaha",
-		HiLo: false,
-		MinHandSize: 4,
-		MaxHandSize: 4,
+		Flag:         "omaha",
+		Name:         "Omaha",
+		HiLo:         false,
+		MinHandSize:  4,
+		MaxHandSize:  4,
 		MaxBoardSize: 5,
 		GetHandStrength: func(board, pocket []Card) HandStrength {
 			strengths := make([]HandStrength, 0, 6)
@@ -58,11 +58,11 @@ func init() {
 	}
 
 	Stud7 := Game{
-		Flag: "stud7",
-		Name: "7-card Stud",
-		HiLo: false,
-		MinHandSize: 0,
-		MaxHandSize: 7,
+		Flag:         "stud7",
+		Name:         "7-card Stud",
+		HiLo:         false,
+		MinHandSize:  0,
+		MaxHandSize:  7,
 		MaxBoardSize: 0,
 		GetHandStrength: func(board, hand []Card) HandStrength {
 			return GetHandStrength(hand)
@@ -70,17 +70,16 @@ func init() {
 	}
 
 	Stud5 := Game{
-		Flag: "stud5",
-		Name: "5-card Stud",
-		HiLo: false,
-		MinHandSize: 0,
-		MaxHandSize: 5,
+		Flag:         "stud5",
+		Name:         "5-card Stud",
+		HiLo:         false,
+		MinHandSize:  0,
+		MaxHandSize:  5,
 		MaxBoardSize: 0,
 		GetHandStrength: func(board, hand []Card) HandStrength {
 			return GetHandStrength(hand)
 		},
 	}
-
 
 	games = []Game{Holdem, Omaha, Stud7, Stud5}
 }
@@ -172,7 +171,7 @@ func main() {
 
 	for _, rank := range HandRanks() {
 		if rankHits[rank] > 0 {
-			fmt.Printf("%15s %.8f\n", rank.String(), float64(rankHits[rank]) / float64(totalHits))
+			fmt.Printf("%15s %.8f\n", rank.String(), float64(rankHits[rank])/float64(totalHits))
 		}
 	}
 
