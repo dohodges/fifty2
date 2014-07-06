@@ -32,13 +32,57 @@ func init() {
 		MaxBoardSize: 5,
 		GetHandStrength: func(board, pocket []Card) HandStrength {
 			hand := make([]Card, 7)
-			copy(hand[0:2], pocket)
+			copy(hand, pocket)
 			copy(hand[2:], board)
 			return GetHandStrength(hand)
 		},
 	}
 
-	games = []Game{Holdem}
+	Omaha := Game{
+		Flag: "omaha",
+		Name: "Omaha",
+		HiLo: false,
+		MinHandSize: 4,
+		MaxHandSize: 4,
+		MaxBoardSize: 5,
+		GetHandStrength: func(board, pocket []Card) HandStrength {
+			strengths := make([]HandStrength, 0, 6)
+			for p := range Combinations(pocket, 2) {
+				hand := make([]Card, 7)
+				copy(hand, p)
+				copy(hand[2:], board)
+				strengths = append(strengths, GetHandStrength(hand))
+			}
+			return MaxHandStrength(strengths)
+		},
+	}
+
+	Stud7 := Game{
+		Flag: "stud7",
+		Name: "7-card Stud",
+		HiLo: false,
+		MinHandSize: 0,
+		MaxHandSize: 7,
+		MaxBoardSize: 0,
+		GetHandStrength: func(board, hand []Card) HandStrength {
+			return GetHandStrength(hand)
+		},
+	}
+
+	Stud5 := Game{
+		Flag: "stud5",
+		Name: "5-card Stud",
+		HiLo: false,
+		MinHandSize: 0,
+		MaxHandSize: 5,
+		MaxBoardSize: 0,
+		GetHandStrength: func(board, hand []Card) HandStrength {
+			return GetHandStrength(hand)
+		},
+	}
+
+
+	games = []Game{Holdem, Omaha, Stud7, Stud5}
 }
 
 func GetGame(flag string) (Game, bool) {

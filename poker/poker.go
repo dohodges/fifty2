@@ -75,6 +75,32 @@ type HandStrength struct {
 	Strength []CardStrength
 }
 
+func Less(a, b HandStrength) bool {
+	if a.Rank < b.Rank {
+		return true
+	} else if a.Rank == b.Rank {
+		for i := 0; i < len(a.Strength) && i < len(b.Strength); i++ {
+			if a.Strength[i] < b.Strength[i] {
+				return true
+			}
+		}
+	}
+	return false
+}
+
+func MaxHandStrength(strengths []HandStrength) HandStrength {
+	if len(strengths) == 0 {
+		panic("fifty2: cannot find max strength from an empty slice")
+	}
+	max := strengths[0]
+	for i := 1; i < len(strengths); i++ {
+		if Less(max, strengths[i]) {
+			max = strengths[i]
+		}
+	}
+	return max
+}
+
 func GetHandStrength(hand []Card) HandStrength {
 
 	var (
