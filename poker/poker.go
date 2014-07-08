@@ -59,7 +59,7 @@ func (cs CardStrength) Rank() Rank {
 
 func MaxCardStrength(strengths []CardStrength) CardStrength {
 	if len(strengths) == 0 {
-		panic("fifty2: cannot find max strength from an empty slice")
+		panic("fifty2/poker: cannot find max strength from an empty slice")
 	}
 	max := strengths[0]
 	for i := 1; i < len(strengths); i++ {
@@ -90,7 +90,7 @@ func Less(a, b HandStrength) bool {
 
 func MaxHandStrength(strengths []HandStrength) HandStrength {
 	if len(strengths) == 0 {
-		panic("fifty2: cannot find max strength from an empty slice")
+		panic("fifty2/poker: cannot find max strength from an empty slice")
 	}
 	max := strengths[0]
 	for i := 1; i < len(strengths); i++ {
@@ -175,8 +175,8 @@ func GetHandStrength(hand []Card) HandStrength {
 	// two pair / pair
 	for hiStrength := AceHigh; hiStrength > AceLow; hiStrength-- {
 		if rankCount[hiStrength.Rank()] >= 2 {
-			for loStrength := AceHigh; loStrength > AceLow; loStrength-- {
-				if loStrength != hiStrength && rankCount[loStrength.Rank()] >= 2 {
+			for loStrength := hiStrength-1; loStrength > AceLow; loStrength-- {
+				if rankCount[loStrength.Rank()] >= 2 {
 					kickers := getKickers(bitSet&^(hiStrength.Rank().Mask()|loStrength.Rank().Mask()), 1)
 					return HandStrength{TwoPair, append([]CardStrength{hiStrength, loStrength}, kickers...)}
 				}
@@ -188,6 +188,68 @@ func GetHandStrength(hand []Card) HandStrength {
 
 	// high card
 	return HandStrength{HighCard, getKickers(bitSet, 5)}
+}
+
+func GetLowHandStrength(hand []Card) HandStrength {
+
+	var (
+		bitSet     uint16
+		rankCount  [13]uint8
+	)
+
+	for _, card := range hand {
+		rankCount[card.Rank]++
+		bitSet |= card.Rank.Mask()
+	}
+
+	// high card 
+	kickers := getLowKickers(bitSet, 5)
+	if len(kickers) == 5 || len(kickers) == len(hand) {
+		return HandStrength{HighCard, kickers}
+	}
+
+	// pair / two pair
+	for loStrength := AceLow; loStrength < AceHigh; loStrength++ {
+		if rankCount[loStrength.Rank()] >= 2 {
+			kickers  = getLowKickers(bitSet&^loStrength.Rank().Mask(), 3)
+			if len(kickers) == 3 || len(kickers) == (len(hand) - 2) {
+				return HandStrength{Pair, append([]CardStrength{loStrength}, kickers...)}
+			}
+			for hiStrength := loStrength+1; hiStrength < AceHigh; hiStrength++ {
+				if rankCount[hiStrength.Rank()] >= 2 {
+					kickers = getLowKickers(bitSet&^(loStrength.Rank().Mask()|hiStrength.Rank().Mask()), 1)
+					if len(kickers) == 1 || len(hand) == 4 {
+						return HandStrength{TwoPair, append([]CardStrength{hiStrength, loStrength}, kickers...)}
+					}
+				}
+			}
+		}
+	}
+
+	// trips / full house
+	for hiStrength := AceLow; hiStrength < AceHigh; hiStrength++ {
+		if rankCount[hiStrength.Rank()] >= 3 {
+			kickers = getLowKickers(bitSet&^hiStrength.Rank().Mask(), 2)
+			if len(kickers) == 2 || len(kickers) == (len(hand) - 3) {
+				return HandStrength{Trips, append([]CardStrength{hiStrength}, kickers...)}
+			}
+			for loStrength := AceLow; loStrength < AceHigh; loStrength++ {
+				if loStrength != hiStrength && rankCount[loStrength.Rank()] >= 2 {
+					return HandStrength{FullHouse, []CardStrength{hiStrength, loStrength}}
+				}
+			}
+		}
+	}
+
+	// quads
+	for strength := AceLow; strength < AceHigh; strength++ {
+		if rankCount[strength.Rank()] >= 4 {
+			kickers = getLowKickers(bitSet&^strength.Rank().Mask(), 1)
+			return HandStrength{Quads, append([]CardStrength{strength}, kickers...)}
+		}
+	}
+
+	panic("fifty2/poker: impossible low hand")
 }
 
 func findStraight(bitSet uint16) (CardStrength, bool) {
@@ -212,6 +274,19 @@ func getKickers(bitSet uint16, max int) []CardStrength {
 	for strength := AceHigh; strength > AceLow; strength-- {
 		if (bitSet & strength.Rank().Mask()) != 0 {
 			kickers = append(kickers, strength)
+			if len(kickers) == max {
+				return kickers
+			}
+		}
+	}
+	return kickers
+}
+
+func getLowKickers(bitSet uint16, max int) []CardStrength {
+	kickers := make([]CardStrength, 0, max)
+	for strength := AceLow; strength < AceHigh; strength++ {
+		if (bitSet & strength.Rank().Mask()) != 0 {
+			kickers = append([]CardStrength{strength}, kickers...)
 			if len(kickers) == max {
 				return kickers
 			}
