@@ -101,6 +101,19 @@ func MaxHandStrength(strengths []HandStrength) HandStrength {
 	return max
 }
 
+func MinHandStrength(strengths []HandStrength) HandStrength {
+	if len(strengths) == 0 {
+		panic("fifty2/poker: cannot find min strength from an empty slice")
+	}
+	min := strengths[0]
+	for i := 1; i < len(strengths); i++ {
+		if Less(strengths[i], min) {
+			min = strengths[i]
+		}
+	}
+	return min
+}
+
 func GetHandStrength(hand []Card) HandStrength {
 
 	var (
