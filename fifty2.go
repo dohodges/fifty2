@@ -237,12 +237,15 @@ func Index(slice []Card, card Card) int {
 	return -1
 }
 
-func Remove(slice []Card, card Card) []Card {
-	index := Index(slice, card)
-	if index < 0 {
-		return slice
+func Remove(slice []Card, cards ...Card) []Card {
+	for _, card := range cards {
+		index := Index(slice, card)
+		if index < 0 {
+			continue
+		}
+		slice = append(slice[:index], slice[index+1:]...)
 	}
-	return append(slice[:index], slice[index+1:]...)
+	return slice
 }
 
 func Combinations(slice []Card, choose int) chan []Card {
@@ -271,3 +274,30 @@ func findCombinations(slice []Card, combo []Card, choose int, ch chan []Card) {
 		}
 	}
 }
+
+func MultipleCombinations(slice []Card, choose []int) chan [][]Card {
+	ch := make(chan [][]Card)
+	go func() {
+		findMultipleCombinations(slice, make([][]Card, len(choose)), choose, ch)
+		close(ch)
+	}()
+
+	return ch
+}
+
+func findMultipleCombinations(slice []Card, sets [][]Card, choose []int, ch chan [][]Card) {
+	for combo := range Combinations(slice, choose[0]) {
+		sets[len(sets) - len(choose)] = combo
+		if len(choose) == 1 {
+			result := make([][]Card, len(sets))
+			copy(result, sets)
+			ch <- result
+		} else {
+			nextSlice := make([]Card, len(slice))
+			copy(nextSlice, slice)
+			nextSlice = Remove(nextSlice, combo...)
+			findMultipleCombinations(nextSlice, sets, choose[1:], ch)
+		}
+	}
+}
+
