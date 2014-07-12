@@ -294,7 +294,7 @@ func findMultipleCombinations(slice []Card, sets [][]Card, choose []int, ch chan
 		findMultipleCombinations(slice, sets, choose[1:], ch)
 	} else {
 		for combo := range Combinations(slice, choose[0]) {
-			sets[len(sets) - len(choose)] = combo
+			sets[len(sets)-len(choose)] = combo
 			nextSlice := make([]Card, len(slice))
 			copy(nextSlice, slice)
 			nextSlice = Remove(nextSlice, combo...)
@@ -302,4 +302,3 @@ func findMultipleCombinations(slice []Card, sets [][]Card, choose []int, ch chan
 		}
 	}
 }
-

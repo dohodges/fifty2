@@ -12,17 +12,17 @@ import (
 )
 
 var (
-	game Game
-	board []Card
-	hands [][]Card
-	choose []int
+	game      Game
+	board     []Card
+	hands     [][]Card
+	choose    []int
 	fullBoard []Card
 	fullHands [][]Card
 )
 
 type Tally struct {
-	Wins int64
-	Ties int64
+	Wins   int64
+	Ties   int64
 	Losses int64
 }
 
@@ -185,8 +185,8 @@ func TallyDeal(deal []Card) []Tally {
 func combination(n, k int) int64 {
 	c := int64(n)
 	for i := int64(1); i < int64(k); i++ {
-		c *= (int64(n)-i)
-		c /= i+1
+		c *= (int64(n) - i)
+		c /= i + 1
 	}
 	return c
 }

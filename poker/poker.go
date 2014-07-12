@@ -190,7 +190,7 @@ func GetHandStrength(hand []Card) HandStrength {
 	// two pair / pair
 	for hiStrength := AceHigh; hiStrength > AceLow; hiStrength-- {
 		if rankCount[hiStrength.Rank()] >= 2 {
-			for loStrength := hiStrength-1; loStrength > AceLow; loStrength-- {
+			for loStrength := hiStrength - 1; loStrength > AceLow; loStrength-- {
 				if rankCount[loStrength.Rank()] >= 2 {
 					kickers := getKickers(bitSet&^(hiStrength.Rank().Mask()|loStrength.Rank().Mask()), 1)
 					return HandStrength{TwoPair, append([]CardStrength{hiStrength, loStrength}, kickers...)}
@@ -208,8 +208,8 @@ func GetHandStrength(hand []Card) HandStrength {
 func GetLowHandStrength(hand []Card) HandStrength {
 
 	var (
-		bitSet     uint16
-		rankCount  [13]uint8
+		bitSet    uint16
+		rankCount [13]uint8
 	)
 
 	for _, card := range hand {
@@ -217,7 +217,7 @@ func GetLowHandStrength(hand []Card) HandStrength {
 		bitSet |= card.Rank.Mask()
 	}
 
-	// high card 
+	// high card
 	kickers := getLowKickers(bitSet, 5)
 	if len(kickers) == 5 || len(kickers) == len(hand) {
 		return HandStrength{HighCard, kickers}
@@ -226,11 +226,11 @@ func GetLowHandStrength(hand []Card) HandStrength {
 	// pair / two pair
 	for loStrength := AceLow; loStrength < AceHigh; loStrength++ {
 		if rankCount[loStrength.Rank()] >= 2 {
-			kickers  = getLowKickers(bitSet&^loStrength.Rank().Mask(), 3)
-			if len(kickers) == 3 || len(kickers) == (len(hand) - 2) {
+			kickers = getLowKickers(bitSet&^loStrength.Rank().Mask(), 3)
+			if len(kickers) == 3 || len(kickers) == (len(hand)-2) {
 				return HandStrength{Pair, append([]CardStrength{loStrength}, kickers...)}
 			}
-			for hiStrength := loStrength+1; hiStrength < AceHigh; hiStrength++ {
+			for hiStrength := loStrength + 1; hiStrength < AceHigh; hiStrength++ {
 				if rankCount[hiStrength.Rank()] >= 2 {
 					kickers = getLowKickers(bitSet&^(loStrength.Rank().Mask()|hiStrength.Rank().Mask()), 1)
 					if len(kickers) == 1 || len(hand) == 4 {
@@ -245,7 +245,7 @@ func GetLowHandStrength(hand []Card) HandStrength {
 	for hiStrength := AceLow; hiStrength < AceHigh; hiStrength++ {
 		if rankCount[hiStrength.Rank()] >= 3 {
 			kickers = getLowKickers(bitSet&^hiStrength.Rank().Mask(), 2)
-			if len(kickers) == 2 || len(kickers) == (len(hand) - 3) {
+			if len(kickers) == 2 || len(kickers) == (len(hand)-3) {
 				return HandStrength{Trips, append([]CardStrength{hiStrength}, kickers...)}
 			}
 			for loStrength := AceLow; loStrength < AceHigh; loStrength++ {

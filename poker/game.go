@@ -8,9 +8,9 @@ type GameType string
 
 const (
 	Holdem GameType = "holdem"
-	Omaha GameType = "omaha"
-	Stud7 GameType = "stud7"
-	Stud5 GameType = "stud5"
+	Omaha  GameType = "omaha"
+	Stud7  GameType = "stud7"
+	Stud5  GameType = "stud5"
 )
 
 type GameStrengthFunc func(board, hand []Card) (HandStrength, error)
@@ -42,9 +42,9 @@ func init() {
 		},
 
 		Omaha: Game{
-			Name:      "Omaha",
-			HandSize:  4,
-			BoardSize: 5,
+			Name:       "Omaha",
+			HandSize:   4,
+			BoardSize:  5,
 			HiStrength: GetOmahaHandStrength,
 			LoStrength: nil,
 		},
@@ -99,4 +99,3 @@ func GetOmahaLowHandStrength(board, pocket []Card) (HandStrength, error) {
 	}
 	return MinHandStrength(strengths), nil
 }
-
