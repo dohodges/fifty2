@@ -6,91 +6,46 @@ import (
 	. "github.com/dohodges/fifty2"
 	. "github.com/dohodges/fifty2/poker"
 	"os"
+	"reflect"
 	"strings"
 )
 
-type Game struct {
-	Flag            string
-	Name            string
-	HiLo            bool
-	MinHandSize     int
-	MaxHandSize     int
-	MaxBoardSize    int
-	GetHandStrength func(board, hand []Card) HandStrength
+var (
+	game Game
+	board []Card
+	hands [][]Card
+	choose []int
+	fullBoard []Card
+	fullHands [][]Card
+)
+
+type Tally struct {
+	Wins int64
+	Ties int64
+	Losses int64
 }
 
-var games []Game
-
-func init() {
-
-	Holdem := Game{
-		Flag:         "holdem",
-		Name:         "Texas Hold'em",
-		HiLo:         false,
-		MinHandSize:  2,
-		MaxHandSize:  2,
-		MaxBoardSize: 5,
-		GetHandStrength: func(board, pocket []Card) HandStrength {
-			hand := make([]Card, 7)
-			copy(hand, pocket)
-			copy(hand[2:], board)
-			return GetHandStrength(hand)
-		},
-	}
-
-	Omaha := Game{
-		Flag:         "omaha",
-		Name:         "Omaha",
-		HiLo:         false,
-		MinHandSize:  4,
-		MaxHandSize:  4,
-		MaxBoardSize: 5,
-		GetHandStrength: func(board, pocket []Card) HandStrength {
-			strengths := make([]HandStrength, 0, 6)
-			for p := range Combinations(pocket, 2) {
-				hand := make([]Card, 7)
-				copy(hand, p)
-				copy(hand[2:], board)
-				strengths = append(strengths, GetHandStrength(hand))
-			}
-			return MaxHandStrength(strengths)
-		},
-	}
-
-	Stud7 := Game{
-		Flag:         "stud7",
-		Name:         "7-card Stud",
-		HiLo:         false,
-		MinHandSize:  0,
-		MaxHandSize:  7,
-		MaxBoardSize: 0,
-		GetHandStrength: func(board, hand []Card) HandStrength {
-			return GetHandStrength(hand)
-		},
-	}
-
-	Stud5 := Game{
-		Flag:         "stud5",
-		Name:         "5-card Stud",
-		HiLo:         false,
-		MinHandSize:  0,
-		MaxHandSize:  5,
-		MaxBoardSize: 0,
-		GetHandStrength: func(board, hand []Card) HandStrength {
-			return GetHandStrength(hand)
-		},
-	}
-
-	games = []Game{Holdem, Omaha, Stud7, Stud5}
+func (t Tally) WinOdds() float64 {
+	return 100. * float64(t.Wins) / float64(t.Total())
 }
 
-func GetGame(flag string) (Game, bool) {
-	for _, game := range games {
-		if game.Flag == flag {
-			return game, true
-		}
-	}
-	return Game{}, false
+func (t Tally) TieOdds() float64 {
+	return 100. * float64(t.Ties) / float64(t.Total())
+}
+
+func (t Tally) LossOdds() float64 {
+	return 100. * float64(t.Losses) / float64(t.Total())
+}
+
+func (t Tally) Total() int64 {
+	return t.Wins + t.Ties + t.Losses
+}
+
+func (t Tally) Add(t2 Tally) Tally {
+	t.Wins += t2.Wins
+	t.Ties += t2.Ties
+	t.Losses += t2.Losses
+	return t
 }
 
 func main() {
@@ -98,81 +53,125 @@ func main() {
 	var (
 		gameFlag  string
 		boardFlag string
-		hiLoFlag  bool
 	)
 
-	flag.StringVar(&gameFlag, "game", "holdem", "game")
+	flag.StringVar(&gameFlag, "game", string(Holdem), "game")
 	flag.StringVar(&boardFlag, "board", "", "community cards")
-	flag.BoolVar(&hiLoFlag, "hilo", false, "hi/lo split")
 	flag.Parse()
 
-	game, ok := GetGame(gameFlag)
-	if !ok {
-		fmt.Printf("unknown game - %s", gameFlag)
+	game = GetGame(GameType(gameFlag))
+	if game.Name == "" {
+		fmt.Printf("potodds: unknown game - %s\n", gameFlag)
 		os.Exit(1)
 	}
 
-	if hiLoFlag && !game.HiLo {
-		fmt.Printf("%s does not have a Hi/Lo variant\n", game.Name)
-		os.Exit(1)
-	}
-
-	board, err := NewCardReader(strings.NewReader(boardFlag)).ReadAll()
+	var err error
+	board, err = NewCardReader(strings.NewReader(boardFlag)).ReadAll()
 	if err != nil {
-		fmt.Printf("invalid board - %v\n", err)
+		fmt.Printf("potodds: invalid board - %v\n", err)
 		os.Exit(1)
-	} else if len(board) > game.MaxBoardSize {
-		fmt.Printf("%s has a maximum of %d community cards\n", game.Name, game.MaxBoardSize)
+	} else if len(board) > game.BoardSize {
+		fmt.Printf("potodds: %s has a maximum of %d community cards\n", game.Name, game.BoardSize)
 		os.Exit(1)
 	}
 
-	hand, err := NewCardReader(strings.NewReader(flag.Arg(0))).ReadAll()
-	if err != nil {
-		fmt.Printf("invalid hand - %v\n", err)
-		os.Exit(1)
-	} else if len(hand) < game.MinHandSize {
-		fmt.Printf("%s has a minimum hand size of %d\n", game.Name, game.MinHandSize)
-		os.Exit(1)
-	} else if len(hand) > game.MaxHandSize {
-		fmt.Printf("%s has a maximum hand size of %d\n", game.Name, game.MaxHandSize)
+	hands = make([][]Card, flag.NArg())
+	for i, arg := range flag.Args() {
+		hand, err := NewCardReader(strings.NewReader(arg)).ReadAll()
+		if err != nil {
+			fmt.Printf("potodds: invalid hand - %v\n", err)
+			os.Exit(1)
+		} else if len(hand) > game.HandSize {
+			fmt.Printf("potodds: %s has a maximum hand size of %d\n", game.Name, game.HandSize)
+			os.Exit(1)
+		}
+		hands[i] = hand
+	}
+
+	if len(hands) < 2 {
+		fmt.Printf("potodds: specify at least 2 hands\n")
 		os.Exit(1)
 	}
 
 	deck := NewDeck()
-	for _, card := range board {
-		deck = Remove(deck, card)
-	}
-	for _, card := range hand {
-		deck = Remove(deck, card)
+	deck = Remove(deck, board...)
+	for _, hand := range hands {
+		deck = Remove(deck, hand...)
 	}
 
-	totalHits := 0
-	rankHits := make(map[HandRank]int)
+	// copy known cards to full board and hands
+	fullBoard = make([]Card, game.BoardSize)
+	copy(fullBoard, board)
+	fullHands = make([][]Card, len(hands))
+	for i, hand := range hands {
+		fullHands[i] = make([]Card, game.HandSize)
+		copy(fullHands[i], hand)
+	}
 
-	choose := (game.MaxHandSize - len(hand)) + (game.MaxBoardSize - len(board))
-	for combo := range Combinations(deck, choose) {
-		var fullBoard, fullHand []Card
-		if len(board) < game.MaxBoardSize {
-			fullHand = hand
-			fullBoard = make([]Card, game.MaxBoardSize)
-			copy(fullBoard, board)
-			copy(fullBoard[len(board):], combo)
+	// determine # cards to deal to board and each hand
+	deckChoose := game.BoardSize - len(board)
+	choose = make([]int, len(hands)+1)
+	choose[0] = game.BoardSize - len(board)
+	for i, hand := range hands {
+		deckChoose += game.HandSize - len(hand)
+		choose[i+1] = game.HandSize - len(hand)
+	}
+
+	// tally each possible outcome
+	tallys := make([]Tally, len(hands))
+	for deal := range Combinations(deck, deckChoose) {
+		dealTallys := TallyDeal(deal)
+		for i := 0; i < len(tallys); i++ {
+			tallys[i] = tallys[i].Add(dealTallys[i])
+		}
+	}
+
+	// results
+	fmt.Printf("Game - %s\n", game.Name)
+	if game.BoardSize > 0 {
+		fmt.Printf("Board %s\n", board)
+	}
+	for i, tally := range tallys {
+		fmt.Printf("Player %d %s - win: %6.2f%%  tie: %6.2f%%  lose: %6.2f%%\n", i+1, hands[i],
+			tally.WinOdds(), tally.TieOdds(), tally.LossOdds())
+	}
+
+}
+
+func TallyDeal(deal []Card) []Tally {
+	tallys := make([]Tally, len(hands))
+
+	// each possible deal
+	for dealCombo := range MultipleCombinations(deal, choose) {
+		hiStrengths := make([]HandStrength, len(fullHands))
+		copy(fullBoard[len(board):], dealCombo[0])
+		for i, fullHand := range fullHands {
+			copy(fullHand[len(hands[i]):], dealCombo[i+1])
+			strength, err := game.HiStrength(fullBoard, fullHand)
+			if err != nil {
+				strength = HandStrength{} // invalid hand
+			}
+			hiStrengths[i] = strength
+		}
+
+		// tally wins/losses/ties
+		max := MaxHandStrength(hiStrengths)
+		best := make([]int, 0, len(hiStrengths))
+		for i, strength := range hiStrengths {
+			if reflect.DeepEqual(strength, max) {
+				best = append(best, i)
+			} else {
+				tallys[i].Losses++
+			}
+		}
+		if len(best) > 1 {
+			for i := range best {
+				tallys[best[i]].Ties++
+			}
 		} else {
-			fullBoard = board
-			fullHand = make([]Card, game.MaxHandSize)
-			copy(fullHand, hand)
-			copy(fullHand[len(hand):], combo)
-		}
-
-		strength := game.GetHandStrength(fullBoard, fullHand)
-		rankHits[strength.Rank]++
-		totalHits++
-	}
-
-	for _, rank := range HandRanks() {
-		if rankHits[rank] > 0 {
-			fmt.Printf("%15s %.8f\n", rank.String(), float64(rankHits[rank])/float64(totalHits))
+			tallys[best[0]].Wins++
 		}
 	}
 
+	return tallys
 }

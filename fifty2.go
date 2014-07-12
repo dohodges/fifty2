@@ -263,13 +263,13 @@ func Combinations(slice []Card, choose int) chan []Card {
 }
 
 func findCombinations(slice []Card, combo []Card, choose int, ch chan []Card) {
-	for i, c := range slice {
-		combo[len(combo)-choose] = c
-		if choose == 1 {
-			result := make([]Card, len(combo))
-			copy(result, combo)
-			ch <- result
-		} else {
+	if choose == 0 {
+		result := make([]Card, len(combo))
+		copy(result, combo)
+		ch <- result
+	} else {
+		for i, c := range slice {
+			combo[len(combo)-choose] = c
 			findCombinations(slice[i+1:], combo, choose-1, ch)
 		}
 	}
@@ -286,13 +286,15 @@ func MultipleCombinations(slice []Card, choose []int) chan [][]Card {
 }
 
 func findMultipleCombinations(slice []Card, sets [][]Card, choose []int, ch chan [][]Card) {
-	for combo := range Combinations(slice, choose[0]) {
-		sets[len(sets) - len(choose)] = combo
-		if len(choose) == 1 {
-			result := make([][]Card, len(sets))
-			copy(result, sets)
-			ch <- result
-		} else {
+	if len(choose) == 0 {
+		result := make([][]Card, len(sets))
+		copy(result, sets)
+		ch <- result
+	} else if choose[0] == 0 {
+		findMultipleCombinations(slice, sets, choose[1:], ch)
+	} else {
+		for combo := range Combinations(slice, choose[0]) {
+			sets[len(sets) - len(choose)] = combo
 			nextSlice := make([]Card, len(slice))
 			copy(nextSlice, slice)
 			nextSlice = Remove(nextSlice, combo...)

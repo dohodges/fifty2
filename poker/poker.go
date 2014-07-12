@@ -82,6 +82,8 @@ func Less(a, b HandStrength) bool {
 		for i := 0; i < len(a.Strength) && i < len(b.Strength); i++ {
 			if a.Strength[i] < b.Strength[i] {
 				return true
+			} else if a.Strength[i] > b.Strength[i] {
+				return false
 			}
 		}
 	}
