@@ -3,6 +3,7 @@ package main
 import (
 	"flag"
 	"fmt"
+	"github.com/cheggaaa/pb"
 	. "github.com/dohodges/fifty2"
 	. "github.com/dohodges/fifty2/poker"
 	"os"
@@ -117,6 +118,9 @@ func main() {
 		choose[i+1] = game.HandSize - len(hand)
 	}
 
+	progress := pb.New64(combination(len(deck), deckChoose))
+	progress.Start()
+
 	// tally each possible outcome
 	tallys := make([]Tally, len(hands))
 	for deal := range Combinations(deck, deckChoose) {
@@ -124,7 +128,9 @@ func main() {
 		for i := 0; i < len(tallys); i++ {
 			tallys[i] = tallys[i].Add(dealTallys[i])
 		}
+		progress.Increment()
 	}
+	progress.Finish()
 
 	// results
 	fmt.Printf("Game - %s\n", game.Name)
@@ -132,8 +138,8 @@ func main() {
 		fmt.Printf("Board %s\n", board)
 	}
 	for i, tally := range tallys {
-		fmt.Printf("Player %d %s - win: %6.2f%%  tie: %6.2f%%  lose: %6.2f%%\n", i+1, hands[i],
-			tally.WinOdds(), tally.TieOdds(), tally.LossOdds())
+		fmt.Printf("Player %2d - win: %6.2f%%  tie: %6.2f%%  lose: %6.2f%%  %s\n", i+1,
+			tally.WinOdds(), tally.TieOdds(), tally.LossOdds(), hands[i])
 	}
 
 }
@@ -174,4 +180,13 @@ func TallyDeal(deal []Card) []Tally {
 	}
 
 	return tallys
+}
+
+func combination(n, k int) int64 {
+	c := int64(n)
+	for i := int64(1); i < int64(k); i++ {
+		c *= (int64(n)-i)
+		c /= i+1
+	}
+	return c
 }
