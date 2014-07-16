@@ -6,6 +6,20 @@ import (
 	"testing"
 )
 
+func BenchmarkCombinations(b *testing.B) {
+	deck := NewDeck()
+	for i := 0; i < b.N; i++ {
+		for _ = range Combinations(deck, 7) { }
+	}
+}
+
+func BenchmarkMultipleCombinations(b *testing.B) {
+	deck := NewDeck()
+	for i := 0; i < b.N; i++ {
+		for _ = range MultipleCombinations(deck, []int{3, 2}) { }
+	}
+}
+
 func TestCardReader(t *testing.T) {
 	card, _ := NewCardReader(strings.NewReader("7♠")).Read()
 	if !reflect.DeepEqual(card, Card{Seven, Spades}) {

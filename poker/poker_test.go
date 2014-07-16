@@ -6,6 +6,33 @@ import (
 	"testing"
 )
 
+func BenchmarkGetHandStrength5(b *testing.B) {
+	deck := NewDeck()
+	for i := 0; i < b.N; i++ {
+		Shuffle(deck)
+		hand := deck[:5]
+		GetHandStrength(hand)
+	}
+}
+
+func BenchmarkGetHandStrength7(b *testing.B) {
+	deck := NewDeck()
+	for i := 0; i < b.N; i++ {
+		Shuffle(deck)
+		hand := deck[:7]
+		GetHandStrength(hand)
+	}
+}
+
+func BenchmarkGetHandStrength13(b *testing.B) {
+	deck := NewDeck()
+	for i := 0; i < b.N; i++ {
+		Shuffle(deck)
+		hand := deck[:13]
+		GetHandStrength(hand)
+	}
+}
+
 func TestStraightFlush(t *testing.T) {
 	h := []Card{
 		Card{Ace, Spades},

@@ -9,6 +9,7 @@ import (
 	"math"
 	"os"
 	"reflect"
+	"runtime/pprof"
 	"strings"
 )
 
@@ -77,12 +78,24 @@ func main() {
 		gameFlag  string
 		boardFlag string
 		approx bool
+		profile string
 	)
 
 	flag.StringVar(&gameFlag, "game", string(Holdem), "game")
 	flag.StringVar(&boardFlag, "board", "", "community cards")
 	flag.BoolVar(&approx, "approx", false, "approximate")
+	flag.StringVar(&profile, "profile", "", "create cpu profile")
 	flag.Parse()
+
+	if profile != "" {
+		f, err := os.Create(profile)
+		if err != nil {
+			fmt.Println(err)
+			os.Exit(1)
+		}
+		pprof.StartCPUProfile(f)
+		defer pprof.StopCPUProfile()
+	}
 
 	game = GetGame(GameType(gameFlag))
 	if game.Name == "" {
