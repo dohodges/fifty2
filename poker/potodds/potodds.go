@@ -6,6 +6,7 @@ import (
 	"github.com/cheggaaa/pb"
 	. "github.com/dohodges/fifty2"
 	. "github.com/dohodges/fifty2/poker"
+	"math"
 	"os"
 	"reflect"
 	"strings"
@@ -24,6 +25,27 @@ type Tally struct {
 	Wins   int64
 	Ties   int64
 	Losses int64
+}
+
+type GameTally []Tally
+
+func (gt GameTally) Add(gt2 GameTally) GameTally {
+	result := make(GameTally, len(gt))
+	copy(result, gt)
+	for i := 0; i < len(gt); i++ {
+		result[i] = gt[i].Add(gt2[i])
+	}
+	return result
+}
+
+func (gt GameTally) Delta(gt2 GameTally) float64 {
+	var absDelta, deltas float64
+	for i := range gt {
+		absDelta += math.Abs(gt[i].WinOdds() - gt2[i].WinOdds())
+		deltas++
+	}
+
+	return absDelta/deltas
 }
 
 func (t Tally) WinOdds() float64 {
@@ -54,10 +76,12 @@ func main() {
 	var (
 		gameFlag  string
 		boardFlag string
+		approx bool
 	)
 
 	flag.StringVar(&gameFlag, "game", string(Holdem), "game")
 	flag.StringVar(&boardFlag, "board", "", "community cards")
+	flag.BoolVar(&approx, "approx", false, "approximate")
 	flag.Parse()
 
 	game = GetGame(GameType(gameFlag))
@@ -118,34 +142,49 @@ func main() {
 		choose[i+1] = game.HandSize - len(hand)
 	}
 
-	progress := pb.New64(combination(len(deck), deckChoose))
-	progress.Start()
+	gameTally := make(GameTally, len(hands))
 
-	// tally each possible outcome
-	tallys := make([]Tally, len(hands))
-	for deal := range Combinations(deck, deckChoose) {
-		dealTallys := TallyDeal(deal)
-		for i := 0; i < len(tallys); i++ {
-			tallys[i] = tallys[i].Add(dealTallys[i])
+	if approx {
+		iterations := 0
+		for {
+			lastTally := gameTally
+			for i := 0; i < 100; i++ {
+				Shuffle(deck)
+				deal := deck[:deckChoose]
+				gameTally = gameTally.Add(TallyDeal(deal))
+				iterations++
+			}
+			if iterations > 100 && gameTally.Delta(lastTally) < .001 {
+				fmt.Printf("Iterations - %d\n", iterations)
+				break;
+			}
 		}
-		progress.Increment()
+	} else {
+		progress := pb.New64(combination(len(deck), deckChoose))
+		progress.Start()
+
+		// tally each possible outcome
+		for deal := range Combinations(deck, deckChoose) {
+			gameTally = gameTally.Add(TallyDeal(deal))
+			progress.Increment()
+		}
+		progress.Finish()
 	}
-	progress.Finish()
 
 	// results
 	fmt.Printf("Game - %s\n", game.Name)
 	if game.BoardSize > 0 {
 		fmt.Printf("Board %s\n", board)
 	}
-	for i, tally := range tallys {
+	for i, tally := range gameTally {
 		fmt.Printf("Player %2d - win: %6.2f%%  tie: %6.2f%%  lose: %6.2f%%  %s\n", i+1,
 			tally.WinOdds(), tally.TieOdds(), tally.LossOdds(), hands[i])
 	}
 
 }
 
-func TallyDeal(deal []Card) []Tally {
-	tallys := make([]Tally, len(hands))
+func TallyDeal(deal []Card) GameTally {
+	tally := make(GameTally, len(hands))
 
 	// each possible deal
 	for dealCombo := range MultipleCombinations(deal, choose) {
@@ -167,19 +206,19 @@ func TallyDeal(deal []Card) []Tally {
 			if reflect.DeepEqual(strength, max) {
 				best = append(best, i)
 			} else {
-				tallys[i].Losses++
+				tally[i].Losses++
 			}
 		}
 		if len(best) > 1 {
 			for i := range best {
-				tallys[best[i]].Ties++
+				tally[best[i]].Ties++
 			}
 		} else {
-			tallys[best[0]].Wins++
+			tally[best[0]].Wins++
 		}
 	}
 
-	return tallys
+	return tally
 }
 
 func combination(n, k int) int64 {
