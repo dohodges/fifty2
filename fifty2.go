@@ -248,6 +248,7 @@ func Remove(slice []Card, cards ...Card) []Card {
 	return slice
 }
 
+/*
 func Combinations(slice []Card, choose int) chan []Card {
 	if choose > len(slice) {
 		panic("fifty2: cannot produce combinations larger than given card slice")
@@ -302,3 +303,4 @@ func findMultipleCombinations(slice []Card, sets [][]Card, choose []int, ch chan
 		}
 	}
 }
+*/
