@@ -5,6 +5,11 @@ type CardSliceIterator interface {
 	Next() []Card
 }
 
+type CardSlice2DIterator interface {
+	HasNext() bool
+	Next() [][]Card
+}
+
 type comboIterator struct {
 	slice []Card
 	choose int
@@ -65,4 +70,72 @@ func (ci *comboIterator) Next() []Card {
 	}
 	ci.moveNext()
 	return combo
+}
+
+type comboSetIterator struct {
+	slice [][]Card
+	choose []int
+	iterators []CardSliceIterator
+	next [][]Card
+	done bool
+}
+
+func MultipleCombinations(slice []Card, choose []int) CardSlice2DIterator {
+	iterator := &comboSetIterator{
+		slice: make([][]Card, len(choose)),
+		choose: choose,
+		iterators: make([]CardSliceIterator, len(choose)),
+		next : make([][]Card, 0, len(choose)),
+		done: false,
+	}
+	iterator.slice[0] = slice
+	iterator.prime()
+	return iterator
+}
+
+func (csi *comboSetIterator) prime() {
+	for i := len(csi.next); i < len(csi.choose); i++ {
+		if i > 0 {
+			nextSlice := make([]Card, len(csi.slice[i-1]))
+			copy(nextSlice, csi.slice[i-1])
+			csi.slice[i] = Remove(nextSlice, csi.next[i-1]...)
+		}
+		itr := Combinations(csi.slice[i], csi.choose[i])
+		csi.iterators[i] = itr
+		if itr.HasNext() {
+			csi.next = append(csi.next, itr.Next())
+		} else {
+			csi.next = append(csi.next, []Card{})
+		}
+	}
+}
+
+func (csi *comboSetIterator) moveNext() {
+	inc := len(csi.choose)-1
+	for inc >= 0 {
+		itr := csi.iterators[inc]
+		if itr.HasNext() {
+			csi.next[inc] = itr.Next()
+			break
+		} else {
+			csi.next = csi.next[:inc]
+			inc--
+		}
+	}
+	if inc < 0 {
+		csi.done = true
+	} else {
+		csi.prime()
+	}
+}
+
+func (csi *comboSetIterator) HasNext() bool {
+	return !csi.done
+}
+
+func (csi *comboSetIterator) Next() [][]Card {
+	next := make([][]Card, len(csi.next))
+	copy(next, csi.next)
+	csi.moveNext()
+	return next
 }

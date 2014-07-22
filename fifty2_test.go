@@ -13,14 +13,12 @@ func BenchmarkCombinations(b *testing.B) {
 	}
 }
 
-/*
 func BenchmarkMultipleCombinations(b *testing.B) {
 	deck := NewDeck()
 	for i := 0; i < b.N; i++ {
-		for _ = range MultipleCombinations(deck, []int{3, 2}) { }
+		for itr := MultipleCombinations(deck, []int{3, 2}); itr.HasNext(); itr.Next() { }
 	}
 }
-*/
 
 func TestCardReader(t *testing.T) {
 	card, _ := NewCardReader(strings.NewReader("7♠")).Read()
@@ -62,7 +60,6 @@ func TestCombinations(t *testing.T) {
 
 }
 
-/*
 func TestMultipleCombinations(t *testing.T) {
 	deck := []Card{
 		Card{Four, Spades},
@@ -72,8 +69,8 @@ func TestMultipleCombinations(t *testing.T) {
 	}
 
 	comboSets := make([][][]Card, 0, 12)
-	for comboSet := range MultipleCombinations(deck, []int{2, 1}) {
-		comboSets = append(comboSets, comboSet)
+	for itr := MultipleCombinations(deck, []int{2, 1}); itr.HasNext(); {
+		comboSets = append(comboSets, itr.Next())
 	}
 
 	expect := [][][]Card{
@@ -137,4 +134,3 @@ func TestMultipleCombinations(t *testing.T) {
 	}
 
 }
-*/
