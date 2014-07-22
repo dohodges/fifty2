@@ -177,8 +177,8 @@ func main() {
 		progress.Start()
 
 		// tally each possible outcome
-		for deal := range Combinations(deck, deckChoose) {
-			gameTally = gameTally.Add(TallyDeal(deal))
+		for itr := Combinations(deck, deckChoose); itr.HasNext(); {
+			gameTally = gameTally.Add(TallyDeal(itr.Next()))
 			progress.Increment()
 		}
 		progress.Finish()
@@ -200,7 +200,8 @@ func TallyDeal(deal []Card) GameTally {
 	tally := make(GameTally, len(hands))
 
 	// each possible deal
-	for dealCombo := range MultipleCombinations(deal, choose) {
+	for itr := MultipleCombinations(deal, choose); itr.HasNext(); {
+		dealCombo := itr.Next()
 		hiStrengths := make([]HandStrength, len(fullHands))
 		copy(fullBoard[len(board):], dealCombo[0])
 		for i, fullHand := range fullHands {
