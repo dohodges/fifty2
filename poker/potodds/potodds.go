@@ -3,12 +3,10 @@ package main
 import (
 	"flag"
 	"fmt"
-	"github.com/cheggaaa/pb"
 	. "github.com/dohodges/fifty2"
 	. "github.com/dohodges/fifty2/poker"
 	"math"
 	"os"
-	"reflect"
 	"runtime/pprof"
 	"strings"
 )
@@ -28,15 +26,28 @@ type Tally struct {
 	Losses int64
 }
 
-type GameTally []Tally
+type GameTally []*Tally
 
-func (gt GameTally) Add(gt2 GameTally) GameTally {
-	result := make(GameTally, len(gt))
-	copy(result, gt)
-	for i := 0; i < len(gt); i++ {
-		result[i] = gt[i].Add(gt2[i])
+func NewGameTally(players int) GameTally {
+	gt := make(GameTally, players)
+	for i := 0; i < players; i++ {
+		gt[i] = &Tally{}
 	}
-	return result
+	return gt
+}
+
+func (gt GameTally) Add(gt2 GameTally) {
+	for i := 0; i < len(gt); i++ {
+		gt[i].Add(gt2[i])
+	}
+}
+
+func (gt GameTally) Clone() GameTally {
+	clone := make([]*Tally, len(gt))
+	for i := range gt {
+		clone[i] = gt[i].Clone()
+	}
+	return clone
 }
 
 func (gt GameTally) Delta(gt2 GameTally) float64 {
@@ -45,31 +56,37 @@ func (gt GameTally) Delta(gt2 GameTally) float64 {
 		absDelta += math.Abs(gt[i].WinOdds() - gt2[i].WinOdds())
 		deltas++
 	}
-
 	return absDelta/deltas
 }
 
-func (t Tally) WinOdds() float64 {
+func (t *Tally) Clone() *Tally {
+	return &Tally{
+		Wins: t.Wins,
+		Ties: t.Ties,
+		Losses: t.Losses,
+	}
+}
+
+func (t *Tally) WinOdds() float64 {
 	return 100. * float64(t.Wins) / float64(t.Total())
 }
 
-func (t Tally) TieOdds() float64 {
+func (t *Tally) TieOdds() float64 {
 	return 100. * float64(t.Ties) / float64(t.Total())
 }
 
-func (t Tally) LossOdds() float64 {
+func (t *Tally) LossOdds() float64 {
 	return 100. * float64(t.Losses) / float64(t.Total())
 }
 
-func (t Tally) Total() int64 {
+func (t *Tally) Total() int64 {
 	return t.Wins + t.Ties + t.Losses
 }
 
-func (t Tally) Add(t2 Tally) Tally {
+func (t *Tally) Add(t2 *Tally) {
 	t.Wins += t2.Wins
 	t.Ties += t2.Ties
 	t.Losses += t2.Losses
-	return t
 }
 
 func main() {
@@ -155,16 +172,16 @@ func main() {
 		choose[i+1] = game.HandSize - len(hand)
 	}
 
-	gameTally := make(GameTally, len(hands))
+	gameTally := NewGameTally(len(hands))
 
 	if approx {
 		iterations := 0
 		for {
-			lastTally := gameTally
+			lastTally := gameTally.Clone()
 			for i := 0; i < 100; i++ {
 				Shuffle(deck)
 				deal := deck[:deckChoose]
-				gameTally = gameTally.Add(TallyDeal(deal))
+				gameTally.Add(TallyDeal(deal))
 				iterations++
 			}
 			if iterations > 100 && gameTally.Delta(lastTally) < .001 {
@@ -173,15 +190,10 @@ func main() {
 			}
 		}
 	} else {
-		progress := pb.New64(combination(len(deck), deckChoose))
-		progress.Start()
-
 		// tally each possible outcome
-		for deal := range Combinations(deck, deckChoose) {
-			gameTally = gameTally.Add(TallyDeal(deal))
-			progress.Increment()
+		for itr := Combinations(deck, deckChoose); itr.HasNext(); {
+			gameTally.Add(TallyDeal(itr.Next()))
 		}
-		progress.Finish()
 	}
 
 	// results
@@ -197,10 +209,11 @@ func main() {
 }
 
 func TallyDeal(deal []Card) GameTally {
-	tally := make(GameTally, len(hands))
+	tally := NewGameTally(len(hands))
 
 	// each possible deal
-	for dealCombo := range MultipleCombinations(deal, choose) {
+	for itr := MultipleCombinations(deal, choose); itr.HasNext(); {
+		dealCombo := itr.Next()
 		hiStrengths := make([]HandStrength, len(fullHands))
 		copy(fullBoard[len(board):], dealCombo[0])
 		for i, fullHand := range fullHands {
@@ -216,7 +229,7 @@ func TallyDeal(deal []Card) GameTally {
 		max := MaxHandStrength(hiStrengths)
 		best := make([]int, 0, len(hiStrengths))
 		for i, strength := range hiStrengths {
-			if reflect.DeepEqual(strength, max) {
+			if Equal(strength, max) {
 				best = append(best, i)
 			} else {
 				tally[i].Losses++

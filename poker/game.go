@@ -80,9 +80,9 @@ func GetHoldemHandStrength(board, pocket []Card) (HandStrength, error) {
 
 func GetOmahaHandStrength(board, pocket []Card) (HandStrength, error) {
 	strengths := make([]HandStrength, 0, 6)
-	for p := range Combinations(pocket, 2) {
+	for itr := Combinations(pocket, 2); itr.HasNext(); {
 		hand := make([]Card, 7)
-		copy(hand, p)
+		copy(hand, itr.Next())
 		copy(hand[2:], board)
 		strengths = append(strengths, GetHandStrength(hand))
 	}
@@ -91,9 +91,9 @@ func GetOmahaHandStrength(board, pocket []Card) (HandStrength, error) {
 
 func GetOmahaLowHandStrength(board, pocket []Card) (HandStrength, error) {
 	strengths := make([]HandStrength, 0, 6)
-	for p := range Combinations(pocket, 2) {
+	for itr := Combinations(pocket, 2); itr.HasNext(); {
 		hand := make([]Card, 7)
-		copy(hand, p)
+		copy(hand, itr.Next())
 		copy(hand[2:], board)
 		strengths = append(strengths, GetHandStrength(hand))
 	}

@@ -9,14 +9,14 @@ import (
 func BenchmarkCombinations(b *testing.B) {
 	deck := NewDeck()
 	for i := 0; i < b.N; i++ {
-		for _ = range Combinations(deck, 7) { }
+		for itr := Combinations(deck, 7); itr.HasNext(); itr.Next() { }
 	}
 }
 
 func BenchmarkMultipleCombinations(b *testing.B) {
 	deck := NewDeck()
 	for i := 0; i < b.N; i++ {
-		for _ = range MultipleCombinations(deck, []int{3, 2}) { }
+		for itr := MultipleCombinations(deck, []int{3, 2}); itr.HasNext(); itr.Next() { }
 	}
 }
 
@@ -41,8 +41,8 @@ func TestCombinations(t *testing.T) {
 	}
 
 	combos := make([][]Card, 0, 6)
-	for combo := range Combinations(hand, 2) {
-		combos = append(combos, combo)
+	for itr := Combinations(hand, 2); itr.HasNext(); {
+		combos = append(combos, itr.Next())
 	}
 
 	expect := [][]Card{
@@ -69,8 +69,8 @@ func TestMultipleCombinations(t *testing.T) {
 	}
 
 	comboSets := make([][][]Card, 0, 12)
-	for comboSet := range MultipleCombinations(deck, []int{2, 1}) {
-		comboSets = append(comboSets, comboSet)
+	for itr := MultipleCombinations(deck, []int{2, 1}); itr.HasNext(); {
+		comboSets = append(comboSets, itr.Next())
 	}
 
 	expect := [][][]Card{
