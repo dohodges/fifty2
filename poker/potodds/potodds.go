@@ -3,7 +3,6 @@ package main
 import (
 	"flag"
 	"fmt"
-	//"github.com/cheggaaa/pb"
 	. "github.com/dohodges/fifty2"
 	. "github.com/dohodges/fifty2/poker"
 	"math"
@@ -191,15 +190,10 @@ func main() {
 			}
 		}
 	} else {
-		//progress := pb.New64(combination(len(deck), deckChoose))
-		//progress.Start()
-
 		// tally each possible outcome
 		for itr := Combinations(deck, deckChoose); itr.HasNext(); {
 			gameTally.Add(TallyDeal(itr.Next()))
-			//progress.Increment()
 		}
-		//progress.Finish()
 	}
 
 	// results
