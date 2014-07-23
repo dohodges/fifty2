@@ -8,7 +8,6 @@ import (
 	. "github.com/dohodges/fifty2/poker"
 	"math"
 	"os"
-	"reflect"
 	"runtime/pprof"
 	"strings"
 )
@@ -236,7 +235,7 @@ func TallyDeal(deal []Card) GameTally {
 		max := MaxHandStrength(hiStrengths)
 		best := make([]int, 0, len(hiStrengths))
 		for i, strength := range hiStrengths {
-			if reflect.DeepEqual(strength, max) {
+			if Equal(strength, max) {
 				best = append(best, i)
 			} else {
 				tally[i].Losses++

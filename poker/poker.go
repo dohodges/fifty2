@@ -75,6 +75,21 @@ type HandStrength struct {
 	Strength []CardStrength
 }
 
+func Equal(a, b HandStrength) bool {
+	if a.Rank != b.Rank {
+		return false
+	}
+	if len(a.Strength)  != len(b.Strength) {
+		return false
+	}
+	for i := range a.Strength {
+		if a.Strength[i] != b.Strength[i] {
+			return false
+		}
+	}
+	return true
+}
+
 func Less(a, b HandStrength) bool {
 	if a.Rank < b.Rank {
 		return true
