@@ -4,10 +4,10 @@ import (
 	. "github.com/dohodges/fifty2"
 )
 
-type HandRank uint16
+type HandRank uint8
 
 const (
-	HighCard HandRank = 1 << iota
+	HighCard HandRank = iota
 	Pair
 	TwoPair
 	Trips
@@ -46,7 +46,7 @@ func (hr HandRank) String() string {
 	return ""
 }
 
-type CardStrength uint16
+type CardStrength uint8
 
 const (
 	AceLow  CardStrength = CardStrength(Ace)
@@ -70,14 +70,14 @@ func MaxCardStrength(strengths []CardStrength) CardStrength {
 	return max
 }
 
-type HandStrength uint64
+type HandStrength uint32
 
 func MakeHandStrength(rank HandRank, strength1, strength2 CardStrength, kickers uint16) HandStrength {
-	return HandStrength(uint64(rank) << 48 | uint64(strength1) << 32 | uint64(strength2) << 16 | uint64(kickers))
+	return HandStrength(uint32(rank) << 24 | uint32(strength1) << 20 | uint32(strength2) << 16 | uint32(kickers))
 }
 
 func (hs HandStrength) Rank() HandRank {
-	return HandRank(hs >> 48)
+	return HandRank(hs >> 24)
 }
 
 func MaxHandStrength(strengths []HandStrength) HandStrength {
