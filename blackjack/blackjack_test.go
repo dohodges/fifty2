@@ -64,6 +64,6 @@ func TestHandValues(t *testing.T) {
 
 func assertHandValue(t *testing.T, expect uint, hand []Card) {
 	if value := HandValue(hand); value != expect {
-		t.Errorf("hand %v value %v != %v", String(hand), value, expect)
+		t.Errorf("hand %v value %v != %v", hand, value, expect)
 	}
 }
