@@ -7,7 +7,7 @@ import (
 type HandRank uint16
 
 const (
-	HighCard HandRank = iota
+	HighCard HandRank = 1 << iota
 	Pair
 	TwoPair
 	Trips
@@ -46,16 +46,16 @@ func (hr HandRank) String() string {
 	return ""
 }
 
-type CardStrength Rank
+type CardStrength uint16
 
 const (
 	AceLow  CardStrength = CardStrength(Ace)
 	AceHigh CardStrength = CardStrength(King + 1)
 )
 
-func (cs CardStrength) Rank() Rank {
-	return Rank(cs % 13)
-}
+func (cs CardStrength) Rank() Rank { return Rank(cs % 13) }
+
+func (cs CardStrength) Mask() uint16 { return uint16(1) << cs }
 
 func MaxCardStrength(strengths []CardStrength) CardStrength {
 	if len(strengths) == 0 {
@@ -70,39 +70,14 @@ func MaxCardStrength(strengths []CardStrength) CardStrength {
 	return max
 }
 
-type HandStrength struct {
-	Rank     HandRank
-	Strength []CardStrength
+type HandStrength uint64
+
+func MakeHandStrength(rank HandRank, strength1, strength2 CardStrength, kickers uint16) HandStrength {
+	return HandStrength(uint64(rank) << 48 | uint64(strength1) << 32 | uint64(strength2) << 16 | uint64(kickers))
 }
 
-func Equal(a, b HandStrength) bool {
-	if a.Rank != b.Rank {
-		return false
-	}
-	if len(a.Strength)  != len(b.Strength) {
-		return false
-	}
-	for i := range a.Strength {
-		if a.Strength[i] != b.Strength[i] {
-			return false
-		}
-	}
-	return true
-}
-
-func Less(a, b HandStrength) bool {
-	if a.Rank < b.Rank {
-		return true
-	} else if a.Rank == b.Rank {
-		for i := 0; i < len(a.Strength) && i < len(b.Strength); i++ {
-			if a.Strength[i] < b.Strength[i] {
-				return true
-			} else if a.Strength[i] > b.Strength[i] {
-				return false
-			}
-		}
-	}
-	return false
+func (hs HandStrength) Rank() HandRank {
+	return HandRank(hs >> 48)
 }
 
 func MaxHandStrength(strengths []HandStrength) HandStrength {
@@ -111,7 +86,7 @@ func MaxHandStrength(strengths []HandStrength) HandStrength {
 	}
 	max := strengths[0]
 	for i := 1; i < len(strengths); i++ {
-		if Less(max, strengths[i]) {
+		if strengths[i] > max {
 			max = strengths[i]
 		}
 	}
@@ -124,7 +99,7 @@ func MinHandStrength(strengths []HandStrength) HandStrength {
 	}
 	min := strengths[0]
 	for i := 1; i < len(strengths); i++ {
-		if Less(strengths[i], min) {
+		if strengths[i] < min {
 			min = strengths[i]
 		}
 	}
@@ -156,14 +131,14 @@ func GetHandStrength(hand []Card) HandStrength {
 	}
 	if len(straights) > 0 {
 		strength := MaxCardStrength(straights)
-		return HandStrength{StraightFlush, []CardStrength{strength}}
+		return MakeHandStrength(StraightFlush, strength, 0, 0)
 	}
 
 	// quads
 	for strength := AceHigh; strength > AceLow; strength-- {
 		if rankCount[strength.Rank()] >= 4 {
 			kickers := getKickers(bitSet&^strength.Rank().Mask(), 1)
-			return HandStrength{Quads, append([]CardStrength{strength}, kickers...)}
+			return MakeHandStrength(Quads, strength, 0, kickers)
 		}
 	}
 
@@ -172,7 +147,7 @@ func GetHandStrength(hand []Card) HandStrength {
 		if rankCount[hiStrength.Rank()] >= 3 {
 			for loStrength := AceHigh; loStrength > AceLow; loStrength-- {
 				if loStrength != hiStrength && rankCount[loStrength.Rank()] >= 2 {
-					return HandStrength{FullHouse, []CardStrength{hiStrength, loStrength}}
+					return MakeHandStrength(FullHouse, hiStrength, loStrength, 0)
 				}
 			}
 		}
@@ -186,19 +161,19 @@ func GetHandStrength(hand []Card) HandStrength {
 		}
 	}
 	if flushBitSet > 0 {
-		return HandStrength{Flush, getKickers(flushBitSet, 5)}
+		return MakeHandStrength(Flush, 0, 0, getKickers(flushBitSet, 5))
 	}
 
 	// straight
 	if strength, found := findStraight(bitSet); found {
-		return HandStrength{Straight, []CardStrength{strength}}
+		return MakeHandStrength(Straight, strength, 0, 0)
 	}
 
 	// trips
 	for strength := AceHigh; strength > AceLow; strength-- {
 		if rankCount[strength.Rank()] >= 3 {
 			kickers := getKickers(bitSet&^strength.Rank().Mask(), 2)
-			return HandStrength{Trips, append([]CardStrength{strength}, kickers...)}
+			return MakeHandStrength(Trips, strength, 0, kickers)
 		}
 	}
 
@@ -208,16 +183,16 @@ func GetHandStrength(hand []Card) HandStrength {
 			for loStrength := hiStrength - 1; loStrength > AceLow; loStrength-- {
 				if rankCount[loStrength.Rank()] >= 2 {
 					kickers := getKickers(bitSet&^(hiStrength.Rank().Mask()|loStrength.Rank().Mask()), 1)
-					return HandStrength{TwoPair, append([]CardStrength{hiStrength, loStrength}, kickers...)}
+					return MakeHandStrength(TwoPair, hiStrength, loStrength, kickers)
 				}
 			}
 			kickers := getKickers(bitSet&^hiStrength.Rank().Mask(), 3)
-			return HandStrength{Pair, append([]CardStrength{hiStrength}, kickers...)}
+			return MakeHandStrength(Pair, hiStrength, 0, kickers)
 		}
 	}
 
 	// high card
-	return HandStrength{HighCard, getKickers(bitSet, 5)}
+	return MakeHandStrength(HighCard, 0, 0, getKickers(bitSet, 5))
 }
 
 func GetLowHandStrength(hand []Card) HandStrength {
@@ -233,23 +208,23 @@ func GetLowHandStrength(hand []Card) HandStrength {
 	}
 
 	// high card
-	kickers := getLowKickers(bitSet, 5)
-	if len(kickers) == 5 || len(kickers) == len(hand) {
-		return HandStrength{HighCard, kickers}
+	kickers, found := getLowKickers(bitSet, 5)
+	if found == 5 ||  found == len(hand) {
+		return MakeHandStrength(HighCard, 0, 0, kickers)
 	}
 
 	// pair / two pair
 	for loStrength := AceLow; loStrength < AceHigh; loStrength++ {
 		if rankCount[loStrength.Rank()] >= 2 {
-			kickers = getLowKickers(bitSet&^loStrength.Rank().Mask(), 3)
-			if len(kickers) == 3 || len(kickers) == (len(hand)-2) {
-				return HandStrength{Pair, append([]CardStrength{loStrength}, kickers...)}
+			kickers, found = getLowKickers(bitSet&^loStrength.Rank().Mask(), 3)
+			if found == 3 || found == (len(hand)-2) {
+				return MakeHandStrength(Pair, loStrength, 0, kickers)
 			}
 			for hiStrength := loStrength + 1; hiStrength < AceHigh; hiStrength++ {
 				if rankCount[hiStrength.Rank()] >= 2 {
-					kickers = getLowKickers(bitSet&^(loStrength.Rank().Mask()|hiStrength.Rank().Mask()), 1)
-					if len(kickers) == 1 || len(hand) == 4 {
-						return HandStrength{TwoPair, append([]CardStrength{hiStrength, loStrength}, kickers...)}
+					kickers, found = getLowKickers(bitSet&^(loStrength.Rank().Mask()|hiStrength.Rank().Mask()), 1)
+					if found == 1 || len(hand) == 4 {
+						return MakeHandStrength(TwoPair, hiStrength, loStrength, kickers)
 					}
 				}
 			}
@@ -259,13 +234,13 @@ func GetLowHandStrength(hand []Card) HandStrength {
 	// trips / full house
 	for hiStrength := AceLow; hiStrength < AceHigh; hiStrength++ {
 		if rankCount[hiStrength.Rank()] >= 3 {
-			kickers = getLowKickers(bitSet&^hiStrength.Rank().Mask(), 2)
-			if len(kickers) == 2 || len(kickers) == (len(hand)-3) {
-				return HandStrength{Trips, append([]CardStrength{hiStrength}, kickers...)}
+			kickers, found = getLowKickers(bitSet&^hiStrength.Rank().Mask(), 2)
+			if found == 2 || found == (len(hand)-3) {
+				return MakeHandStrength(Trips, hiStrength, 0, kickers)
 			}
 			for loStrength := AceLow; loStrength < AceHigh; loStrength++ {
 				if loStrength != hiStrength && rankCount[loStrength.Rank()] >= 2 {
-					return HandStrength{FullHouse, []CardStrength{hiStrength, loStrength}}
+					return MakeHandStrength(FullHouse, hiStrength, loStrength, 0)
 				}
 			}
 		}
@@ -274,8 +249,8 @@ func GetLowHandStrength(hand []Card) HandStrength {
 	// quads
 	for strength := AceLow; strength < AceHigh; strength++ {
 		if rankCount[strength.Rank()] >= 4 {
-			kickers = getLowKickers(bitSet&^strength.Rank().Mask(), 1)
-			return HandStrength{Quads, append([]CardStrength{strength}, kickers...)}
+			kickers, _ = getLowKickers(bitSet&^strength.Rank().Mask(), 1)
+			return MakeHandStrength(Quads, strength, 0, kickers)
 		}
 	}
 
@@ -299,12 +274,14 @@ func findStraight(bitSet uint16) (CardStrength, bool) {
 	return 0, false
 }
 
-func getKickers(bitSet uint16, max int) []CardStrength {
-	kickers := make([]CardStrength, 0, max)
+func getKickers(bitSet uint16, max int) uint16 {
+	kickers := uint16(0)
+	found := 0
 	for strength := AceHigh; strength > AceLow; strength-- {
 		if (bitSet & strength.Rank().Mask()) != 0 {
-			kickers = append(kickers, strength)
-			if len(kickers) == max {
+			kickers |= strength.Mask()
+			found++
+			if found == max {
 				return kickers
 			}
 		}
@@ -312,15 +289,17 @@ func getKickers(bitSet uint16, max int) []CardStrength {
 	return kickers
 }
 
-func getLowKickers(bitSet uint16, max int) []CardStrength {
-	kickers := make([]CardStrength, 0, max)
+func getLowKickers(bitSet uint16, max int) (uint16, int) {
+	kickers := uint16(0)
+	found := 0
 	for strength := AceLow; strength < AceHigh; strength++ {
 		if (bitSet & strength.Rank().Mask()) != 0 {
-			kickers = append([]CardStrength{strength}, kickers...)
-			if len(kickers) == max {
-				return kickers
+			kickers |= strength.Mask()
+			found++
+			if found == max {
+				return kickers, found
 			}
 		}
 	}
-	return kickers
+	return kickers, found
 }

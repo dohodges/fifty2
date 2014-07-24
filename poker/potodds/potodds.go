@@ -220,7 +220,7 @@ func TallyDeal(deal []Card) GameTally {
 			copy(fullHand[len(hands[i]):], dealCombo[i+1])
 			strength, err := game.HiStrength(fullBoard, fullHand)
 			if err != nil {
-				strength = HandStrength{} // invalid hand
+				strength = 0
 			}
 			hiStrengths[i] = strength
 		}
@@ -229,7 +229,7 @@ func TallyDeal(deal []Card) GameTally {
 		max := MaxHandStrength(hiStrengths)
 		best := make([]int, 0, len(hiStrengths))
 		for i, strength := range hiStrengths {
-			if Equal(strength, max) {
+			if strength == max {
 				best = append(best, i)
 			} else {
 				tally[i].Losses++
