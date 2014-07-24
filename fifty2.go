@@ -148,6 +148,10 @@ type Card struct {
 	Suit Suit
 }
 
+func (c Card) Mask() uint64 {
+	return uint64(1) << (4*uint64(c.Rank) + uint64(c.Suit))
+}
+
 func (c Card) String() string {
 	return fmt.Sprintf("%c%c", c.Rank.Rune(), c.Suit.Rune())
 }
@@ -218,6 +222,14 @@ func NewDeckSet(decks uint) []Card {
 		copy(deckSet[a:b], NewDeck())
 	}
 	return deckSet
+}
+
+func Mask(slice []Card) uint64 {
+	mask := uint64(0)
+	for _, card := range slice {
+		mask |= card.Mask()
+	}
+	return mask
 }
 
 func Shuffle(slice []Card) {

@@ -2,7 +2,14 @@ package poker
 
 import (
 	. "github.com/dohodges/fifty2"
+	"github.com/golang/groupcache/lru"
 )
+
+var cache *lru.Cache
+
+func init() {
+	cache = lru.New(2598960)
+}
 
 type HandRank uint8
 
@@ -107,6 +114,17 @@ func MinHandStrength(strengths []HandStrength) HandStrength {
 }
 
 func GetHandStrength(hand []Card) HandStrength {
+	if strength, hit := cache.Get(Mask(hand)); hit {
+		return strength.(HandStrength)
+	}
+
+	strength := calculateHandStrength(hand)
+	cache.Add(Mask(hand), strength)
+
+	return strength
+}
+
+func calculateHandStrength(hand []Card) HandStrength {
 
 	var (
 		bitSet     uint16
