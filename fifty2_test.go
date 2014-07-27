@@ -9,14 +9,16 @@ import (
 func BenchmarkCombinations(b *testing.B) {
 	deck := NewDeck()
 	for i := 0; i < b.N; i++ {
-		for itr := Combinations(deck, 7); itr.HasNext(); itr.Next() { }
+		for itr := Combinations(deck, 7); itr.HasNext(); itr.Next() {
+		}
 	}
 }
 
 func BenchmarkMultipleCombinations(b *testing.B) {
 	deck := NewDeck()
 	for i := 0; i < b.N; i++ {
-		for itr := MultipleCombinations(deck, []int{3, 2}); itr.HasNext(); itr.Next() { }
+		for itr := MultipleCombinations(deck, []int{3, 2}); itr.HasNext(); itr.Next() {
+		}
 	}
 }
 

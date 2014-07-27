@@ -14,7 +14,8 @@ func init() {
 type HandRank uint8
 
 const (
-	HighCard HandRank = iota
+	NoHand HandRank = iota
+	HighCard
 	Pair
 	TwoPair
 	Trips
@@ -49,6 +50,8 @@ func (hr HandRank) String() string {
 		return "Pair"
 	case HighCard:
 		return "High Card"
+	case NoHand:
+		return "No Hand"
 	}
 	return ""
 }
@@ -80,7 +83,7 @@ func MaxCardStrength(strengths []CardStrength) CardStrength {
 type HandStrength uint32
 
 func MakeHandStrength(rank HandRank, strength1, strength2 CardStrength, kickers uint16) HandStrength {
-	return HandStrength(uint32(rank) << 24 | uint32(strength1) << 20 | uint32(strength2) << 16 | uint32(kickers))
+	return HandStrength(uint32(rank)<<24 | uint32(strength1)<<20 | uint32(strength2)<<16 | uint32(kickers))
 }
 
 func (hs HandStrength) Rank() HandRank {
@@ -213,7 +216,7 @@ func calculateHandStrength(hand []Card) HandStrength {
 	return MakeHandStrength(HighCard, 0, 0, getKickers(bitSet, 5))
 }
 
-func GetLowHandStrength(hand []Card) HandStrength {
+func GetLowHandStrength(hand []Card, eightOrBetter bool) HandStrength {
 
 	var (
 		bitSet    uint16
@@ -227,8 +230,14 @@ func GetLowHandStrength(hand []Card) HandStrength {
 
 	// high card
 	kickers, found := getLowKickers(bitSet, 5)
-	if found == 5 ||  found == len(hand) {
-		return MakeHandStrength(HighCard, 0, 0, kickers)
+	if found == 5 || found == len(hand) {
+		if !eightOrBetter || kickers < CardStrength(9).Mask() {
+			return MakeHandStrength(HighCard, 0, 0, kickers)
+		}
+	}
+
+	if eightOrBetter {
+		return MakeHandStrength(NoHand, 0, 0, 0)
 	}
 
 	// pair / two pair

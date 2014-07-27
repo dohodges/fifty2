@@ -56,13 +56,13 @@ func (gt GameTally) Delta(gt2 GameTally) float64 {
 		absDelta += math.Abs(gt[i].WinOdds() - gt2[i].WinOdds())
 		deltas++
 	}
-	return absDelta/deltas
+	return absDelta / deltas
 }
 
 func (t *Tally) Clone() *Tally {
 	return &Tally{
-		Wins: t.Wins,
-		Ties: t.Ties,
+		Wins:   t.Wins,
+		Ties:   t.Ties,
 		Losses: t.Losses,
 	}
 }
@@ -94,8 +94,8 @@ func main() {
 	var (
 		gameFlag  string
 		boardFlag string
-		approx bool
-		profile string
+		approx    bool
+		profile   string
 	)
 
 	flag.StringVar(&gameFlag, "game", string(Holdem), "game")
@@ -186,7 +186,7 @@ func main() {
 			}
 			if iterations > 100 && gameTally.Delta(lastTally) < .001 {
 				fmt.Printf("Iterations - %d\n", iterations)
-				break;
+				break
 			}
 		}
 	} else {
@@ -218,10 +218,7 @@ func TallyDeal(deal []Card) GameTally {
 		copy(fullBoard[len(board):], dealCombo[0])
 		for i, fullHand := range fullHands {
 			copy(fullHand[len(hands[i]):], dealCombo[i+1])
-			strength, err := game.HiStrength(fullBoard, fullHand)
-			if err != nil {
-				strength = 0
-			}
+			strength := game.HiStrength(fullBoard, fullHand)
 			hiStrengths[i] = strength
 		}
 

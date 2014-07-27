@@ -42,7 +42,8 @@ func TestStraightFlush(t *testing.T) {
 	}
 
 	assertStrength(t, GetHandStrength(h), MakeHandStrength(StraightFlush, AceHigh, 0, 0))
-	assertStrength(t, GetLowHandStrength(h), MakeHandStrength(HighCard, 0, 0, 0x1E01))
+	assertStrength(t, GetLowHandStrength(h, false), MakeHandStrength(HighCard, 0, 0, 0x1E01))
+	assertStrength(t, GetLowHandStrength(h, true), MakeHandStrength(NoHand, 0, 0, 0))
 
 	h = []Card{
 		Card{Ace, Clubs},
@@ -53,7 +54,8 @@ func TestStraightFlush(t *testing.T) {
 	}
 
 	assertStrength(t, GetHandStrength(h), MakeHandStrength(StraightFlush, CardStrength(Five), 0, 0))
-	assertStrength(t, GetLowHandStrength(h), MakeHandStrength(HighCard, 0, 0, 0x001F))
+	assertStrength(t, GetLowHandStrength(h, false), MakeHandStrength(HighCard, 0, 0, 0x001F))
+	assertStrength(t, GetLowHandStrength(h, true), MakeHandStrength(HighCard, 0, 0, 0x001F))
 }
 
 func TestQuads(t *testing.T) {
@@ -66,7 +68,8 @@ func TestQuads(t *testing.T) {
 	}
 
 	assertStrength(t, GetHandStrength(h), MakeHandStrength(Quads, CardStrength(King), 0, 0x0040))
-	assertStrength(t, GetLowHandStrength(h), MakeHandStrength(Quads, CardStrength(King), 0, 0x0040))
+	assertStrength(t, GetLowHandStrength(h, false), MakeHandStrength(Quads, CardStrength(King), 0, 0x0040))
+	assertStrength(t, GetLowHandStrength(h, true), MakeHandStrength(NoHand, 0, 0, 0))
 }
 
 func TestFullHouse(t *testing.T) {
@@ -79,7 +82,8 @@ func TestFullHouse(t *testing.T) {
 	}
 
 	assertStrength(t, GetHandStrength(h), MakeHandStrength(FullHouse, CardStrength(Five), CardStrength(Eight), 0))
-	assertStrength(t, GetLowHandStrength(h), MakeHandStrength(FullHouse, CardStrength(Five), CardStrength(Eight), 0))
+	assertStrength(t, GetLowHandStrength(h, false), MakeHandStrength(FullHouse, CardStrength(Five), CardStrength(Eight), 0))
+	assertStrength(t, GetLowHandStrength(h, true), MakeHandStrength(NoHand, 0, 0, 0))
 }
 
 func TestFlush(t *testing.T) {
@@ -92,7 +96,8 @@ func TestFlush(t *testing.T) {
 	}
 
 	assertStrength(t, GetHandStrength(h), MakeHandStrength(Flush, 0, 0, 0x060E))
-	assertStrength(t, GetLowHandStrength(h), MakeHandStrength(HighCard, 0, 0, 0x060E))
+	assertStrength(t, GetLowHandStrength(h, false), MakeHandStrength(HighCard, 0, 0, 0x060E))
+	assertStrength(t, GetLowHandStrength(h, true), MakeHandStrength(NoHand, 0, 0, 0))
 }
 
 func TestStraight(t *testing.T) {
@@ -105,7 +110,8 @@ func TestStraight(t *testing.T) {
 	}
 
 	assertStrength(t, GetHandStrength(h), MakeHandStrength(Straight, CardStrength(Jack), 0, 0))
-	assertStrength(t, GetLowHandStrength(h), MakeHandStrength(HighCard, 0, 0, 0x07C0))
+	assertStrength(t, GetLowHandStrength(h, false), MakeHandStrength(HighCard, 0, 0, 0x07C0))
+	assertStrength(t, GetLowHandStrength(h, true), MakeHandStrength(NoHand, 0, 0, 0))
 }
 
 func TestTrips(t *testing.T) {
@@ -118,7 +124,8 @@ func TestTrips(t *testing.T) {
 	}
 
 	assertStrength(t, GetHandStrength(h), MakeHandStrength(Trips, CardStrength(Nine), 0, 0x088))
-	assertStrength(t, GetLowHandStrength(h), MakeHandStrength(Trips, CardStrength(Nine), 0, 0x088))
+	assertStrength(t, GetLowHandStrength(h, false), MakeHandStrength(Trips, CardStrength(Nine), 0, 0x088))
+	assertStrength(t, GetLowHandStrength(h, true), MakeHandStrength(NoHand, 0, 0, 0))
 }
 
 func TestTwoPair(t *testing.T) {
@@ -131,7 +138,8 @@ func TestTwoPair(t *testing.T) {
 	}
 
 	assertStrength(t, GetHandStrength(h), MakeHandStrength(TwoPair, CardStrength(Seven), CardStrength(Two), 0x1000))
-	assertStrength(t, GetLowHandStrength(h), MakeHandStrength(TwoPair, CardStrength(Seven), CardStrength(Two), 0x1000))
+	assertStrength(t, GetLowHandStrength(h, false), MakeHandStrength(TwoPair, CardStrength(Seven), CardStrength(Two), 0x1000))
+	assertStrength(t, GetLowHandStrength(h, true), MakeHandStrength(NoHand, 0, 0, 0))
 }
 
 func TestPair(t *testing.T) {
@@ -144,7 +152,8 @@ func TestPair(t *testing.T) {
 	}
 
 	assertStrength(t, GetHandStrength(h), MakeHandStrength(Pair, AceHigh, 0, 0x1042))
-	assertStrength(t, GetLowHandStrength(h), MakeHandStrength(Pair, AceLow, 0, 0x1042))
+	assertStrength(t, GetLowHandStrength(h, false), MakeHandStrength(Pair, AceLow, 0, 0x1042))
+	assertStrength(t, GetLowHandStrength(h, true), MakeHandStrength(NoHand, 0, 0, 0))
 }
 
 func TestHighCard(t *testing.T) {
@@ -157,7 +166,8 @@ func TestHighCard(t *testing.T) {
 	}
 
 	assertStrength(t, GetHandStrength(h), MakeHandStrength(HighCard, 0, 0, 0x2846))
-	assertStrength(t, GetLowHandStrength(h), MakeHandStrength(HighCard, 0, 0, 0x0847))
+	assertStrength(t, GetLowHandStrength(h, false), MakeHandStrength(HighCard, 0, 0, 0x0847))
+	assertStrength(t, GetLowHandStrength(h, true), MakeHandStrength(NoHand, 0, 0, 0))
 }
 
 func assertStrength(t *testing.T, actual, expect HandStrength) {

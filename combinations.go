@@ -11,10 +11,10 @@ type CardSlice2DIterator interface {
 }
 
 type comboIterator struct {
-	slice []Card
+	slice  []Card
 	choose int
-	index []int
-	done bool
+	index  []int
+	done   bool
 }
 
 func Combinations(slice []Card, choose int) CardSliceIterator {
@@ -22,17 +22,17 @@ func Combinations(slice []Card, choose int) CardSliceIterator {
 		panic("fifty2: cannot produce combinations larger than given card slice")
 	}
 	iterator := &comboIterator{
-		slice: slice,
+		slice:  slice,
 		choose: choose,
-		index: make([]int, choose),
-		done: false,
+		index:  make([]int, choose),
+		done:   false,
 	}
 	iterator.prime()
 	return iterator
 }
 
 func (ci *comboIterator) prime() {
-	for i := 1; i <  ci.choose; i++ {
+	for i := 1; i < ci.choose; i++ {
 		if ci.index[i] <= ci.index[i-1] {
 			ci.index[i] = ci.index[i-1] + 1
 		}
@@ -40,7 +40,7 @@ func (ci *comboIterator) prime() {
 }
 
 func (ci *comboIterator) moveNext() {
-	inc := ci.choose-1
+	inc := ci.choose - 1
 	reprime := false
 	for inc >= 0 {
 		maxSliceIndex := len(ci.slice) - (ci.choose - inc - 1)
@@ -73,20 +73,20 @@ func (ci *comboIterator) Next() []Card {
 }
 
 type comboSetIterator struct {
-	slice [][]Card
-	choose []int
+	slice     [][]Card
+	choose    []int
 	iterators []CardSliceIterator
-	next [][]Card
-	done bool
+	next      [][]Card
+	done      bool
 }
 
 func MultipleCombinations(slice []Card, choose []int) CardSlice2DIterator {
 	iterator := &comboSetIterator{
-		slice: make([][]Card, len(choose)),
-		choose: choose,
+		slice:     make([][]Card, len(choose)),
+		choose:    choose,
 		iterators: make([]CardSliceIterator, len(choose)),
-		next : make([][]Card, 0, len(choose)),
-		done: false,
+		next:      make([][]Card, 0, len(choose)),
+		done:      false,
 	}
 	iterator.slice[0] = slice
 	iterator.prime()
@@ -111,7 +111,7 @@ func (csi *comboSetIterator) prime() {
 }
 
 func (csi *comboSetIterator) moveNext() {
-	inc := len(csi.choose)-1
+	inc := len(csi.choose) - 1
 	for inc >= 0 {
 		itr := csi.iterators[inc]
 		if itr.HasNext() {
