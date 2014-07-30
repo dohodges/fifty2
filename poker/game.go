@@ -26,8 +26,16 @@ type Game struct {
 	LoStrength GameStrengthFunc
 }
 
-func (g Game) IsHiLo() bool {
+func (g Game) HasHiHand() bool {
+	return g.HiStrength != nil
+}
+
+func (g Game) HasLoHand() bool {
 	return g.LoStrength != nil
+}
+
+func (g Game) IsHiLo() bool {
+	return g.HasHiHand() && g.HasLoHand()
 }
 
 var games map[GameType]Game

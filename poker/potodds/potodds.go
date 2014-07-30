@@ -20,12 +20,6 @@ var (
 	fullHands [][]Card
 )
 
-type Tally struct {
-	Wins   int64
-	Ties   int64
-	Losses int64
-}
-
 type GameTally []*Tally
 
 func NewGameTally(players int) GameTally {
@@ -53,40 +47,63 @@ func (gt GameTally) Clone() GameTally {
 func (gt GameTally) Delta(gt2 GameTally) float64 {
 	var absDelta, deltas float64
 	for i := range gt {
-		absDelta += math.Abs(gt[i].WinOdds() - gt2[i].WinOdds())
+		absDelta += gt[i].Delta(gt2[i])
 		deltas++
 	}
 	return absDelta / deltas
 }
 
+type Tally struct {
+	Scoops int64
+	HiWins int64
+	LoWins int64
+	HiTies int64
+	LoTies int64
+	Total  int64
+}
+
 func (t *Tally) Clone() *Tally {
 	return &Tally{
-		Wins:   t.Wins,
-		Ties:   t.Ties,
-		Losses: t.Losses,
+		Scoops: t.Scoops,
+		HiWins: t.HiWins,
+		LoWins: t.LoWins,
+		HiTies: t.HiTies,
+		LoTies: t.LoTies,
+		Total:  t.Total,
 	}
 }
 
-func (t *Tally) WinOdds() float64 {
-	return 100. * float64(t.Wins) / float64(t.Total())
-}
-
-func (t *Tally) TieOdds() float64 {
-	return 100. * float64(t.Ties) / float64(t.Total())
-}
-
-func (t *Tally) LossOdds() float64 {
-	return 100. * float64(t.Losses) / float64(t.Total())
-}
-
-func (t *Tally) Total() int64 {
-	return t.Wins + t.Ties + t.Losses
-}
-
 func (t *Tally) Add(t2 *Tally) {
-	t.Wins += t2.Wins
-	t.Ties += t2.Ties
-	t.Losses += t2.Losses
+	t.Scoops += t2.Scoops
+	t.HiWins += t2.HiWins
+	t.LoWins += t2.LoWins
+	t.HiTies += t2.HiTies
+	t.LoTies += t2.LoTies
+	t.Total += t2.Total
+}
+
+func (t *Tally) ScoopOdds() float64 {
+	return 100. * float64(t.Scoops) / float64(t.Total)
+}
+
+func (t *Tally) HiWinOdds() float64 {
+	return 100. * float64(t.HiWins) / float64(t.Total)
+}
+
+func (t *Tally) LoWinOdds() float64 {
+	return 100. * float64(t.LoWins) / float64(t.Total)
+}
+
+func (t *Tally) HiTieOdds() float64 {
+	return 100. * float64(t.HiTies) / float64(t.Total)
+}
+
+func (t *Tally) LoTieOdds() float64 {
+	return 100. * float64(t.LoTies) / float64(t.Total)
+}
+
+func (t *Tally) Delta(t2 *Tally) float64 {
+	return (math.Abs(t.HiWinOdds() - t2.HiWinOdds()) + math.Abs(t.LoWinOdds() - t2.LoWinOdds())) / 2.
 }
 
 func main() {
@@ -191,6 +208,7 @@ func main() {
 		}
 	} else {
 		// tally each possible outcome
+		fmt.Printf("Combinations - %d\n", combination(len(deck), deckChoose))
 		for itr := Combinations(deck, deckChoose); itr.HasNext(); {
 			gameTally.Add(TallyDeal(itr.Next()))
 		}
@@ -202,8 +220,16 @@ func main() {
 		fmt.Printf("Board %s\n", board)
 	}
 	for i, tally := range gameTally {
-		fmt.Printf("Player %2d - win: %6.2f%%  tie: %6.2f%%  lose: %6.2f%%  %s\n", i+1,
-			tally.WinOdds(), tally.TieOdds(), tally.LossOdds(), hands[i])
+		if game.IsHiLo() {
+			fmt.Printf("Player %2d - Scoop: %6.2f%%  HiWin: %6.2f%%  LoWin: %6.2f%% HiTie: %6.2f%%  LoTie: %6.2f%%  %s\n",
+			i+1, tally.ScoopOdds(), tally.HiWinOdds(), tally.LoWinOdds(), tally.HiTieOdds(), tally.LoTieOdds(), hands[i])
+		} else if game.HasHiHand() {
+			fmt.Printf("Player %2d - win: %6.2f%%  tie: %6.2f%%  %s\n", i+1,
+				tally.HiWinOdds(), tally.HiTieOdds(), hands[i])
+		} else if game.HasLoHand() {
+			fmt.Printf("Player %2d - win: %6.2f%%  tie: %6.2f%%  %s\n", i+1,
+				tally.LoWinOdds(), tally.LoTieOdds(), hands[i])
+		}
 	}
 
 }
@@ -211,37 +237,85 @@ func main() {
 func TallyDeal(deal []Card) GameTally {
 	tally := NewGameTally(len(hands))
 
+	var hiStrengths, loStrengths []HandStrength
+	if game.HasHiHand() {
+		hiStrengths = make([]HandStrength, len(fullHands))
+	}
+	if game.HasLoHand() {
+		loStrengths = make([]HandStrength, len(fullHands))
+	}
+
 	// each possible deal
 	for itr := MultipleCombinations(deal, choose); itr.HasNext(); {
 		dealCombo := itr.Next()
-		hiStrengths := make([]HandStrength, len(fullHands))
 		copy(fullBoard[len(board):], dealCombo[0])
 		for i, fullHand := range fullHands {
 			copy(fullHand[len(hands[i]):], dealCombo[i+1])
-			strength := game.HiStrength(fullBoard, fullHand)
-			hiStrengths[i] = strength
+			if game.HasHiHand() {
+				hiStrengths[i] = game.HiStrength(fullBoard, fullHand)
+			}
+			if game.HasLoHand() {
+				loStrengths[i] = game.LoStrength(fullBoard, fullHand)
+			}
 		}
 
-		// tally wins/losses/ties
-		max := MaxHandStrength(hiStrengths)
-		best := make([]int, 0, len(hiStrengths))
-		for i, strength := range hiStrengths {
-			if strength == max {
-				best = append(best, i)
-			} else {
-				tally[i].Losses++
+		// tally wins & ties
+		bestHi := GetBestHiHands(hiStrengths)
+		bestLo := GetBestLoHands(loStrengths)
+
+		if len(bestHi) == 1 && len(bestLo) == 1 && bestHi[0] == bestLo[0] {
+			tally[bestHi[0]].Scoops++
+		} else {
+			if len(bestHi) == 1 {
+				tally[bestHi[0]].HiWins++
+			} else if len(bestHi) > 1 {
+				for _, h := range bestHi {
+					tally[h].HiTies++
+				}
+			}
+			if len(bestLo) == 1 {
+				tally[bestLo[0]].LoWins++
+			} else if len(bestLo) > 1 {
+				for _, h := range bestLo {
+					tally[h].LoTies++
+				}
 			}
 		}
-		if len(best) > 1 {
-			for i := range best {
-				tally[best[i]].Ties++
-			}
-		} else {
-			tally[best[0]].Wins++
+
+		for _, t := range tally {
+			t.Total++
 		}
 	}
 
 	return tally
+}
+
+func GetBestHiHands(strengths []HandStrength) []int {
+	max := MakeHandStrength(NoHand, 0, 0, 0)
+	best := make([]int, 0, len(strengths))
+	for i, strength := range strengths {
+		if strength > max {
+			max = strength
+			best = append(best[0:0], i)
+		} else if strength == max {
+			best = append(best, i)
+		}
+	}
+	return best
+}
+
+func GetBestLoHands(strengths []HandStrength) []int {
+	min := MakeHandStrength(StraightFlush, 0, 0, 0)
+	best := make([]int, 0, len(strengths))
+	for i, strength := range strengths {
+		if strength.Rank() != NoHand && strength < min {
+			min = strength
+			best = append(best[0:0], i)
+		} else if strength == min {
+			best = append(best, i)
+		}
+	}
+	return best
 }
 
 func combination(n, k int) int64 {
